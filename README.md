@@ -122,13 +122,12 @@ com.metzger100.calculator
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the LICENSE file for details.
+--- Not Licensed yet ---
 
 ---
 
 ## 🙌 Credits
-
-- Built with ♥️ using Jetpack Compose  
+ 
 - Exchange rate data provided by [fawazahmed0/exchange-api](https://github.com/fawazahmed0/exchange-api)
 
 Feel free to contribute by submitting issues or pull requests!
