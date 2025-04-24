@@ -63,8 +63,8 @@ An elegant, Android-native calculator and currency converter app, built with **J
 ### Clone the repo
 
 ```bash
-git clone https://github.com/yourusername/material-you-calculator.git
-cd material-you-calculator
+git https://github.com/metzger100/calculator.git
+cd calculator
 ```
 
 ### Run the app
