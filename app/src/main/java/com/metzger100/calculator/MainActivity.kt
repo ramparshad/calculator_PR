@@ -2,6 +2,7 @@ package com.metzger100.calculator
 
 import TopAppBar
 import android.app.Application
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,11 +32,27 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        setHighRefreshRate()
         setContent {
             AppContent()
         }
     }
 }
+
+fun MainActivity.setHighRefreshRate() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val display = display ?: return  // context.getDisplay()
+        val highestMode = display.supportedModes
+            .maxByOrNull { it.refreshRate }
+
+        highestMode?.let {
+            window.attributes = window.attributes.apply {
+                preferredDisplayModeId = it.modeId
+            }
+        }
+    }
+}
+
 
 @Composable
 fun AppContent() {
