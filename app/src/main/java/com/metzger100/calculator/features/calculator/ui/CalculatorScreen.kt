@@ -1,17 +1,22 @@
 package com.metzger100.calculator.features.calculator.ui
 
 import android.annotation.SuppressLint
+import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewModel
 
@@ -20,8 +25,8 @@ import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewMod
 fun CalculatorScreen(viewModel: CalculatorViewModel) {
     var keyboardVisible by remember { mutableStateOf(false) }
 
-    // Verwenden von derivedStateOf für die umgekehrte Liste
-    val reversedHistory = remember(viewModel.history) {
+    // reversed history snapshot
+    val reversedHistory by remember(viewModel.history) {
         derivedStateOf { viewModel.history.reversed() }
     }
 
@@ -31,86 +36,62 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             .padding(16.dp)
     ) {
         val keyboardHeight = maxHeight * 0.5f
-
-        val listState = rememberLazyListState()
-
-        LaunchedEffect(viewModel.history) {
-            listState.scrollToItem(0)
-        }
-
-        LaunchedEffect(keyboardVisible, viewModel.input) {
-            if (keyboardVisible || viewModel.input.isNotEmpty()) {
-                listState.scrollToItem(0)
-            }
-        }
+        val textColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+        val resultColor = MaterialTheme.colorScheme.primary.toArgb()
 
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // History (nimmt den verfügbaren Platz ein)
-            val historyModifier = Modifier
-                .fillMaxSize()
-                .weight(1f)
+            // --- replaced LazyColumn with RecyclerView ---
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                val context = LocalContext.current
 
-            Box(modifier = historyModifier) {
-                // CalculatorScreen.kt
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    reverseLayout = true,
-                    contentPadding = PaddingValues(bottom = 4.dp),
-                ) {
-                    items(
-                        items = reversedHistory.value,
-                        key   = { entry -> entry.id }             // ← STABLE KEY
-                    ) { entry ->
-                        Column {
-                            Text(
-                                entry.input
-                                    .split(" ")
-                                    .joinToString(" ") { mapToDisplaySymbols(it) },
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 20.sp
-                                )
+                AndroidView(
+                    factory = {
+                        RecyclerView(context).apply {
+                            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, /*reverseLayout=*/ true)
+                            adapter = CalculationAdapter(
+                                textColor,
+                                resultColor
                             )
-                            Text(
-                                "= ${entry.result}",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 20.sp
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
                         }
-                    }
-                }
+                    },
+                    update = { rv ->
+                        val adapter = rv.adapter as CalculationAdapter
+                        adapter.updateData(reversedHistory)
+                        if (reversedHistory.isNotEmpty()) {
+                            // always show newest at top
+                            rv.scrollToPosition(0)
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
-            // Eingabezeile (dynamische Höhe)
-            val cardModifier = Modifier
-                .fillMaxWidth()
-                .clickable { keyboardVisible = true }
+            Spacer(modifier = Modifier.height(8.dp))
 
-            val cardContentModifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-
+            // Input card
             Card(
-                modifier = cardModifier,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { keyboardVisible = true },
                 shape = MaterialTheme.shapes.medium,
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
-                    modifier = cardContentModifier,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalAlignment = Alignment.End
                 ) {
                     if (viewModel.previewResult.isNotEmpty()) {
                         Text(
-                            text = mapToDisplaySymbols(viewModel.input),
+                            text = viewModel.input,
                             style = MaterialTheme.typography.headlineLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -122,7 +103,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                         )
                     } else {
                         Text(
-                            text = mapToDisplaySymbols(viewModel.input),
+                            text = viewModel.input,
                             style = MaterialTheme.typography.headlineLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -130,10 +111,9 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 }
             }
 
-            // Spacer to make sure input field doesn't overlap with history or keyboard
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Tastatur (wird nur sichtbar, wenn benötigt)
+            // Keyboard
             if (keyboardVisible) {
                 Box(
                     modifier = Modifier
@@ -145,9 +125,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             onInput = viewModel::onInput,
                             onClear = viewModel::clear,
                             onBack = viewModel::backspace,
-                            onEquals = {
-                                viewModel.calculate()
-                            },
+                            onEquals = { viewModel.calculate() },
                             onToggleMode = viewModel::toggleMode
                         )
                     } else {
@@ -156,9 +134,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             onInput = viewModel::onInput,
                             onClear = viewModel::clear,
                             onBack = viewModel::backspace,
-                            onEquals = {
-                                viewModel.calculate()
-                            },
+                            onEquals = { viewModel.calculate() },
                             onToggleMode = viewModel::toggleMode,
                             onToggleInverse = viewModel::toggleInverse,
                             onToggleDegreeMode = viewModel::toggleDegreeMode,
@@ -171,19 +147,54 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     }
 }
 
-fun mapToDisplaySymbols(expression: String): String {
-    return expression
-        .replace("ASIN\\(".toRegex(), "sin⁻¹(")
-        .replace("ACOS\\(".toRegex(), "cos⁻¹(")
-        .replace("ATAN\\(".toRegex(), "tan⁻¹(")
-        .replace("SIN\\(".toRegex(), "sin(")
-        .replace("SINR\\(".toRegex(), "sin(")
-        .replace("COS\\(".toRegex(), "cos(")
-        .replace("COSR\\(".toRegex(), "cos(")
-        .replace("TAN\\(".toRegex(), "tan(")
-        .replace("TANR\\(".toRegex(), "tan(")
-        .replace("SQRT\\(".toRegex(), "√(")
-        .replace("LOG10\\(".toRegex(), "lg(")
-        .replace("LOG\\(".toRegex(), "ln(")
-        .replace("PI", "π")
+// --- RecyclerView Adapter & ViewHolder ---
+
+private class CalculationAdapter(
+    private val textColor: Int,
+    private val resultColor: Int
+) : RecyclerView.Adapter<CalculationViewHolder>() {
+
+    private var items: List<com.metzger100.calculator.data.local.CalculationEntity> = emptyList()
+
+    fun updateData(newItems: List<com.metzger100.calculator.data.local.CalculationEntity>) {
+        items = newItems
+        notifyDataSetChanged()
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CalculationViewHolder {
+        val ctx = parent.context
+        val container = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            setPadding(16, 12, 16, 12)
+        }
+        val inputTv = TextView(ctx).apply {
+            textSize = 20f
+            setTextColor(textColor)
+        }
+        val resultTv = TextView(ctx).apply {
+            textSize = 20f
+            setTextColor(resultColor)
+        }
+        container.addView(inputTv)
+        container.addView(resultTv)
+        return CalculationViewHolder(container, inputTv, resultTv)
+    }
+
+    override fun getItemCount(): Int = items.size
+
+    override fun onBindViewHolder(holder: CalculationViewHolder, position: Int) {
+        val entry = items[position]
+        holder.inputView.text = entry.input
+        holder.resultView.text = "= ${entry.result}"
+    }
 }
+
+private class CalculationViewHolder(
+    view: View,
+    val inputView: TextView,
+    val resultView: TextView
+) : RecyclerView.ViewHolder(view)
