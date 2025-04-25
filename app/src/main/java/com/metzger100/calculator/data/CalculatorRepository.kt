@@ -7,6 +7,7 @@ class CalculatorRepository(private val calcdao: CalculationDao) {
 
     suspend fun insert(input: String, result: String) {
         calcdao.insert(CalculationEntity(input = input, result = result))
+        calcdao.deleteOldEntriesIfOverLimit(25)
     }
 
     suspend fun getHistory(): List<CalculationEntity> {
