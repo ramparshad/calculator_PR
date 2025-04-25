@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.Constants.MajorCurrencyCodes
@@ -72,9 +73,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
                 value = viewModel.value1,
                 isSelected = viewModel.selectedField == 1,
                 currencies = codeList,
-                onCurrencySelected = {
-                    viewModel.onCurrencyChanged1(it)
-                },
+                onCurrencySelected = { viewModel.onCurrencyChanged1(it) },
                 onClick = { viewModel.onSelectField(1) }
             )
             Spacer(Modifier.height(8.dp))
@@ -85,9 +84,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
                 value = viewModel.value2,
                 isSelected = viewModel.selectedField == 2,
                 currencies = codeList,
-                onCurrencySelected = {
-                    viewModel.onCurrencyChanged2(it)
-                },
+                onCurrencySelected = { viewModel.onCurrencyChanged2(it) },
                 onClick = { viewModel.onSelectField(2) }
             )
         }
@@ -99,10 +96,10 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
             }
 
             val hoursUntilNextUpdate = remember(timestamp) {
-                val nextUpdateMillis = timestamp + 12 * 60 * 60 * 1000  // 12 hours in milliseconds
+                val nextUpdateMillis = timestamp + 12 * 60 * 60 * 1000  // 12 hours
                 val now = System.currentTimeMillis()
                 val diffMillis = nextUpdateMillis - now
-                (diffMillis / (1000 * 60 * 60)).coerceAtLeast(0)  // in hours, min. 0
+                (diffMillis / (1000 * 60 * 60)).coerceAtLeast(0)
             }
 
             Column(
@@ -124,7 +121,6 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
             }
         }
 
-
         // Tastatur
         Box(
             Modifier
@@ -137,14 +133,10 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
                     val currentValue = if (viewModel.selectedField == 1) viewModel.value1 else viewModel.value2
                     viewModel.onValueChange(currentValue + label)
                 },
-                onClear = {
-                    viewModel.onValueChange("")
-                },
+                onClear = { viewModel.onValueChange("") },
                 onBack = {
                     val currentValue = if (viewModel.selectedField == 1) viewModel.value1 else viewModel.value2
-                    if (currentValue.isNotEmpty()) {
-                        viewModel.onValueChange(currentValue.dropLast(1))
-                    }
+                    if (currentValue.isNotEmpty()) viewModel.onValueChange(currentValue.dropLast(1))
                 }
             )
         }
@@ -161,21 +153,14 @@ private fun CurrencyRow(
     onCurrencySelected: (String) -> Unit,
     onClick: () -> Unit
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-    // Bildschirm-Konfiguration holen
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val screenHeight = configuration.screenHeightDp.dp
-
+    var showDialog by remember { mutableStateOf(false) }
     val borderModifier = if (isSelected) {
         Modifier.border(
             width = 2.dp,
             color = MaterialTheme.colorScheme.primary,
             shape = MaterialTheme.shapes.medium
         )
-    } else {
-        Modifier
-    }
+    } else Modifier
 
     Card(
         modifier = Modifier
@@ -191,40 +176,11 @@ private fun CurrencyRow(
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box {
-                Text(
-                    text = currency,
-                    fontSize = 18.sp,
-                    modifier = Modifier
-                        .clickable { menuExpanded = true }
-                        .padding(end = 8.dp)
-                )
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    // Fixed size container with LazyColumn for better performance
-                    Box(
-                        modifier = Modifier
-                            .width(screenWidth * 0.5f)
-                            .height(screenHeight * 0.66f)
-                    ) {
-                        val listState = rememberLazyListState()
-                        LazyColumn(state = listState) {
-                            items(currencies.size) { index ->
-                                val (code, title) = currencies[index]
-                                DropdownMenuItem(
-                                    text = { Text(text = title) },
-                                    onClick = {
-                                        onCurrencySelected(code)
-                                        menuExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            Text(
+                text = currency,
+                fontSize = 18.sp,
+                modifier = Modifier.clickable { showDialog = true }
+            )
 
             Spacer(Modifier.width(16.dp))
 
@@ -235,6 +191,57 @@ private fun CurrencyRow(
                 modifier = Modifier.weight(1f),
                 maxLines = 1
             )
+        }
+    }
+
+    if (showDialog) {
+        CurrencySelectorDialog(
+            currencies = currencies,
+            onCurrencySelected = { code ->
+                onCurrencySelected(code)
+                showDialog = false
+            },
+            onDismissRequest = { showDialog = false }
+        )
+    }
+}
+
+@Composable
+private fun CurrencySelectorDialog(
+    currencies: List<Pair<String, String>>,
+    onCurrencySelected: (String) -> Unit,
+    onDismissRequest: () -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
+
+    Dialog(onDismissRequest = onDismissRequest) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            tonalElevation = 8.dp,
+            modifier = Modifier
+                .width(screenWidth * 0.75f)
+                .height(screenHeight * 0.75f)
+                .padding(16.dp)
+        ) {
+            val listState = rememberLazyListState()
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                items(currencies.size) { index ->
+                    val (code, title) = currencies[index]
+                    ListItem(
+                        headlineContent = { Text(title) },
+                        modifier = Modifier
+                            .clickable { onCurrencySelected(code) }
+                            .height(48.dp)
+                            .padding(horizontal = 8.dp)
+                    )
+                }
+            }
         }
     }
 }
