@@ -34,9 +34,6 @@ An elegant, Android-native calculator and currency converter app, built with **J
 - 🔧 **Unit Converter Tab**  
   Add support for converting between units (length, weight, temperature, etc.).
 
-- 🌍 **Localization & Formatting**  
-  Provide translations and locale-specific number/date formatting.
-
 ---
 
 ## 🛠️ Tech Stack
