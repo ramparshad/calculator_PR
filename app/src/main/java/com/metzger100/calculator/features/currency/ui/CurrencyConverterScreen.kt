@@ -1,22 +1,26 @@
 package com.metzger100.calculator.features.currency.ui
 
 import android.annotation.SuppressLint
+import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.Constants.MajorCurrencyCodes
@@ -202,7 +206,7 @@ private fun CurrencyRow(
     }
 
     if (showDialog) {
-        CurrencySelectorDialog(
+        CurrencySelectorDialogRV(
             currencies = currencies,
             onCurrencySelected = { code ->
                 onCurrencySelected(code)
@@ -214,42 +218,68 @@ private fun CurrencyRow(
 }
 
 @Composable
-private fun CurrencySelectorDialog(
+fun CurrencySelectorDialogRV(
     currencies: List<Pair<String, String>>,
     onCurrencySelected: (String) -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val screenHeight = configuration.screenHeightDp.dp
-
+    val textColor = MaterialTheme.colorScheme.onSurface
     Dialog(onDismissRequest = onDismissRequest) {
         Surface(
             shape = MaterialTheme.shapes.medium,
             tonalElevation = 8.dp,
             modifier = Modifier
-                .width(screenWidth * 0.75f)
-                .height(screenHeight * 0.75f)
-                .padding(16.dp)
+                .fillMaxWidth(0.90f)
+                .fillMaxHeight(0.75f)
         ) {
-            val listState = rememberLazyListState()
-            LazyColumn(
-                state = listState,
+            AndroidView(
+                factory = {
+                    RecyclerView(it).apply {
+                        layoutManager = LinearLayoutManager(it)
+                        adapter = object : RecyclerView.Adapter<CurrencyViewHolder>() {
+                            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CurrencyViewHolder {
+                                val linearLayout = LinearLayout(it).apply {
+                                    orientation = LinearLayout.HORIZONTAL
+                                    layoutParams = ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.WRAP_CONTENT
+                                    )
+                                }
+
+                                val textView = TextView(it).apply {
+                                    setPadding(32, 24, 32, 24)
+                                    textSize = 16f
+                                    setTextColor(textColor.toArgb())
+                                    layoutParams = ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.WRAP_CONTENT
+                                    )
+                                }
+
+                                linearLayout.addView(textView)
+
+                                return CurrencyViewHolder(linearLayout)
+                            }
+
+                            override fun getItemCount() = currencies.size
+
+                            override fun onBindViewHolder(holder: CurrencyViewHolder, position: Int) {
+                                val (code, title) = currencies[position]
+                                val linearLayout = holder.itemView as LinearLayout
+                                val textView = linearLayout.getChildAt(0) as TextView
+                                textView.text = title
+
+                                holder.itemView.setOnClickListener {
+                                    onCurrencySelected(code)
+                                }
+                            }
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxSize()
-            ) {
-                items(
-                    items = currencies,
-                    key   = { (code, _) -> code }
-                ) { (code, title) ->
-                    ListItem(
-                        headlineContent = { Text(title) },
-                        modifier = Modifier
-                            .clickable { onCurrencySelected(code) }
-                            .height(48.dp)
-                            .padding(horizontal = 8.dp)
-                    )
-                }
-            }
+            )
         }
     }
 }
+
+class CurrencyViewHolder(view: View) : RecyclerView.ViewHolder(view)

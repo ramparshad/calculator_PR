@@ -93,7 +93,7 @@ class CurrencyRepository @Inject constructor(
             try {
                 val body = httpClient.get(jsDelivrUrl).bodyAsText()
                 if (!body.contains("Couldn't find the requested release version")) {
-                    Log.d(TAG, "fetchRatesJson: got $versionTag from jsDelivr")
+                    Log.d(TAG, "fetchRatesJson: got $versionTag from jsDelivr: $jsDelivrUrl")
                     return body
                 }
                 Log.d(TAG, "fetchRatesJson: jsDelivr $versionTag not ready yet")
@@ -117,7 +117,7 @@ class CurrencyRepository @Inject constructor(
             try {
                 val body = httpClient.get(pagesDevUrl).bodyAsText()
                 if (!body.contains("<h1")) {
-                    Log.d(TAG, "fetchRatesJson: got $date from pages.dev")
+                    Log.d(TAG, "fetchRatesJson: got $date from pages.dev: $pagesDevUrl")
                     return body
                 }
                 Log.d(TAG, "fetchRatesJson: pages.dev $date not ready yet")
@@ -182,7 +182,7 @@ class CurrencyRepository @Inject constructor(
             try {
                 val body = httpClient.get(jsDelivrUrl).bodyAsText()
                 if (!body.contains("Couldn't find the requested release version")) {
-                    Log.d(TAG, "fetchCurrenciesJson: got $versionTag from jsDelivr")
+                    Log.d(TAG, "fetchCurrenciesJson: got $versionTag from jsDelivr: $jsDelivrUrl")
                     return body
                 }
                 Log.d(TAG, "fetchCurrenciesJson: jsDelivr $versionTag not ready yet")
@@ -206,7 +206,7 @@ class CurrencyRepository @Inject constructor(
             try {
                 val body = httpClient.get(pagesDevUrl).bodyAsText()
                 if (!body.contains("<h1")) {
-                    Log.d(TAG, "fetchCurrenciesJson: got $date from pages.dev")
+                    Log.d(TAG, "fetchCurrenciesJson: got $date from pages.dev: $pagesDevUrl")
                     return body
                 }
                 Log.d(TAG, "fetchCurrenciesJson: pages.dev $date not ready yet")

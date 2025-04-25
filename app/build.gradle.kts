@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.navigation.compose)
+    implementation(libs.splitties.views.recyclerview)
     //evalex
     implementation(libs.evalex)
     // room
