@@ -10,18 +10,11 @@ interface CalculationDao {
     @Insert
     suspend fun insert(calculation: CalculationEntity)
 
-    @Query("""
-        DELETE FROM calculations
-        WHERE id IN (
-            SELECT id FROM calculations
-            ORDER BY id ASC
-            LIMIT (
-                SELECT COUNT(*) - :limit FROM calculations
-                WHERE (SELECT COUNT(*) FROM calculations) > :limit
-            )
-        )
-    """)
-    suspend fun deleteOldEntriesIfOverLimit(limit: Int)
+    @Query("SELECT COUNT(*) FROM calculations")
+    suspend fun getCount(): Int
+
+    @Query("DELETE FROM calculations WHERE id IN (SELECT id FROM calculations ORDER BY id ASC LIMIT :count)")
+    suspend fun deleteOldestEntries(count: Int)
 
     @Query("SELECT * FROM calculations ORDER BY id ASC")
     suspend fun getAll(): List<CalculationEntity>
