@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">计算器</string>
+	<string name="no_exchange_data">没有可用的汇率数据。请上网或重新启动应用程序。</string>
+	<string name="exchange_rates_as_of">汇率</string>
+	<string name="TopAppBar_Title">计算器</string>
+	<string name="TopAppBar_Menu">开放菜单</string>
+	<string name="TopAppBarPurge_History">删除历史记录</string>
+	<string name="NavItem_Calculator">计算器</string>
+	<string name="NavItem_Currency">货币</string>
+	<string name="NavItem_Units">单位</string>
+	<string name="Calculator_Error">错误</string>
+	<string name="next_rates_update_in">下一个汇率更新</string>
+	<string name="next_rates_update_in_end">小时</string>
+	<string name="TopAppBar_RefreshRates">刷新交换费率</string>
+</resources>

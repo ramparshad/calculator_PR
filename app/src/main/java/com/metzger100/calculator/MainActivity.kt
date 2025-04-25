@@ -1,6 +1,6 @@
 package com.metzger100.calculator
 
-import AppTopBar
+import TopAppBar
 import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -47,7 +47,10 @@ fun AppContent() {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
-                AppTopBar(onClearHistory = CalcViewModel::clearHistory)
+                TopAppBar(
+                    onClearHistory = CalcViewModel::clearHistory,
+                    onRefreshRates = { CurViewModel.loadBase(CurViewModel.base.value) }
+                )
             },
             bottomBar = {
                 BottomNavBar(navController = navController)

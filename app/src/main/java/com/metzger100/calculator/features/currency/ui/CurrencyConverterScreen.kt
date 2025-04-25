@@ -1,9 +1,8 @@
 package com.metzger100.calculator.features.currency.ui
 
 import android.annotation.SuppressLint
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,14 +11,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.metzger100.calculator.R
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.Constants.MajorCurrencyCodes
 import java.util.Locale
 
-@RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
@@ -40,24 +40,6 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
         else -> listOf("USD" to "US Dollar", "EUR" to "Euro")
     }
 
-    // Initiale Auswahl
-    var currency1 by remember { mutableStateOf("USD") }
-    var currency2 by remember { mutableStateOf("EUR") }
-    var selectedField by remember { mutableStateOf(1) }
-
-    // Eingabewerte
-    var value1 by remember { mutableStateOf("") }
-    var value2 by remember { mutableStateOf("") }
-
-    // Umrechnungsfunktion
-    fun recalc() {
-        if (selectedField == 1) {
-            value2 = viewModel.convert(value1, currency1, currency2)
-        } else {
-            value1 = viewModel.convert(value2, currency2, currency1)
-        }
-    }
-
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
@@ -73,7 +55,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
             // Fehlermeldung, falls offline ohne Daten
             if (rates.isEmpty()) {
                 Text(
-                    text = "No exchange rate data available.\nPlease go online or restart the app.",
+                    text = stringResource(id = R.string.no_exchange_data),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier
@@ -86,29 +68,27 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
 
             // Feld 1
             CurrencyRow(
-                currency = codeList.find { it.first == currency1 }?.second ?: currency1,
-                value = value1,
-                isSelected = selectedField == 1,
+                currency = codeList.find { it.first == viewModel.currency1 }?.second ?: viewModel.currency1,
+                value = viewModel.value1,
+                isSelected = viewModel.selectedField == 1,
                 currencies = codeList,
                 onCurrencySelected = {
-                    currency1 = it
-                    recalc()
+                    viewModel.onCurrencyChanged1(it)
                 },
-                onClick = { selectedField = 1 }
+                onClick = { viewModel.onSelectField(1) }
             )
             Spacer(Modifier.height(8.dp))
 
             // Feld 2
             CurrencyRow(
-                currency = codeList.find { it.first == currency2 }?.second ?: currency2,
-                value = value2,
-                isSelected = selectedField == 2,
+                currency = codeList.find { it.first == viewModel.currency2 }?.second ?: viewModel.currency2,
+                value = viewModel.value2,
+                isSelected = viewModel.selectedField == 2,
                 currencies = codeList,
                 onCurrencySelected = {
-                    currency2 = it
-                    recalc()
+                    viewModel.onCurrencyChanged2(it)
                 },
-                onClick = { selectedField = 2 }
+                onClick = { viewModel.onSelectField(2) }
             )
         }
 
@@ -117,15 +97,33 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
                 java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                     .format(java.util.Date(timestamp))
             }
-            Text(
-                text = "Exchange rates as of $formattedTime",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+
+            val hoursUntilNextUpdate = remember(timestamp) {
+                val nextUpdateMillis = timestamp + 12 * 60 * 60 * 1000  // 12 hours in milliseconds
+                val now = System.currentTimeMillis()
+                val diffMillis = nextUpdateMillis - now
+                (diffMillis / (1000 * 60 * 60)).coerceAtLeast(0)  // in hours, min. 0
+            }
+
+            Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = keyboardHeight + 8.dp)
-            )
+                    .padding(bottom = keyboardHeight + 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(id = R.string.exchange_rates_as_of) + " " + formattedTime,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = stringResource(id = R.string.next_rates_update_in) + " " + hoursUntilNextUpdate + " " + stringResource(id = R.string.next_rates_update_in_end),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
         }
+
 
         // Tastatur
         Box(
@@ -136,21 +134,16 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
         ) {
             CurrencyConverterKeyboard(
                 onInput = { label ->
-                    if (selectedField == 1) value1 += label else value2 += label
-                    recalc()
+                    val currentValue = if (viewModel.selectedField == 1) viewModel.value1 else viewModel.value2
+                    viewModel.onValueChange(currentValue + label)
                 },
                 onClear = {
-                    if (selectedField == 1) {
-                        value1 = ""; value2 = ""
-                    } else {
-                        value2 = ""; value1 = ""
-                    }
+                    viewModel.onValueChange("")
                 },
                 onBack = {
-                    if (selectedField == 1 && value1.isNotEmpty()) {
-                        value1 = value1.dropLast(1); recalc()
-                    } else if (selectedField == 2 && value2.isNotEmpty()) {
-                        value2 = value2.dropLast(1); recalc()
+                    val currentValue = if (viewModel.selectedField == 1) viewModel.value1 else viewModel.value2
+                    if (currentValue.isNotEmpty()) {
+                        viewModel.onValueChange(currentValue.dropLast(1))
                     }
                 }
             )
@@ -161,21 +154,34 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CurrencyRow(
-    currency: String,  // Titel
+    currency: String,
     value: String,
     isSelected: Boolean,
-    currencies: List<Pair<String, String>>,  // List mit Paaren (Code, Titel)
+    currencies: List<Pair<String, String>>,
     onCurrencySelected: (String) -> Unit,
     onClick: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val background = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent
+    // Bildschirm-Konfiguration holen
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
+
+    val borderModifier = if (isSelected) {
+        Modifier.border(
+            width = 2.dp,
+            color = MaterialTheme.colorScheme.primary,
+            shape = MaterialTheme.shapes.medium
+        )
+    } else {
+        Modifier
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(background)
+            .then(borderModifier)
             .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -198,7 +204,11 @@ private fun CurrencyRow(
                     onDismissRequest = { menuExpanded = false }
                 ) {
                     // Fixed size container with LazyColumn for better performance
-                    Box(modifier = Modifier.size(width = 150.dp, height = 300.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .width(screenWidth * 0.5f)
+                            .height(screenHeight * 0.66f)
+                    ) {
                         val listState = rememberLazyListState()
                         LazyColumn(state = listState) {
                             items(currencies.size) { index ->
@@ -221,7 +231,7 @@ private fun CurrencyRow(
             Text(
                 text = value.ifEmpty { "0" },
                 fontSize = if (isSelected) 24.sp else 20.sp,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
                 maxLines = 1
             )

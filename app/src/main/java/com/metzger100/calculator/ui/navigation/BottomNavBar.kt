@@ -2,7 +2,7 @@ package com.metzger100.calculator.ui.navigation
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
@@ -14,6 +14,7 @@ fun BottomNavBar(navController: NavController) {
 
     NavigationBar {
         items.forEach { item ->
+            val labelText = stringResource(id = item.labelRes)
             NavigationBarItem(
                 selected = currentRoute == item.route,
                 onClick = {
@@ -25,9 +26,10 @@ fun BottomNavBar(navController: NavController) {
                         }
                     }
                 },
-                icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) }
+                icon = { Icon(item.icon, contentDescription = labelText) },
+                label = { Text(labelText) }
             )
         }
     }
 }
+

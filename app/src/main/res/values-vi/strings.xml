@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Máy tính</string>
+	<string name="no_exchange_data">Không có dữ liệu tỷ giá hối đoái có sẵn. Vui lòng truy cập trực tuyến hoặc khởi động lại ứng dụng.</string>
+	<string name="exchange_rates_as_of">Tỷ giá hối đoái kể từ</string>
+	<string name="TopAppBar_Title">Máy tính</string>
+	<string name="TopAppBar_Menu">Mở menu</string>
+	<string name="TopAppBarPurge_History">Xóa lịch sử</string>
+	<string name="NavItem_Calculator">Máy tính</string>
+	<string name="NavItem_Currency">Tiền tệ</string>
+	<string name="NavItem_Units">Đơn vị</string>
+	<string name="Calculator_Error">Lỗi</string>
+	<string name="next_rates_update_in">Cập nhật tỷ giá hối đoái tiếp theo trong</string>
+	<string name="next_rates_update_in_end">giờ</string>
+	<string name="TopAppBar_RefreshRates">Làm mới giá trao đổi ngay bây giờ</string>
+</resources>

@@ -6,7 +6,9 @@ import com.metzger100.calculator.data.CalculatorRepository
 import com.metzger100.calculator.data.local.CalculatorDatabase
 import com.metzger100.calculator.data.local.CalculationDao
 import com.metzger100.calculator.data.local.CurrencyListDao
+import com.metzger100.calculator.data.local.CurrencyPrefsDao
 import com.metzger100.calculator.data.local.CurrencyRateDao
+import com.metzger100.calculator.data.local.MIGRATION_1_2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,7 +30,9 @@ object AppModule {
             app,
             CalculatorDatabase::class.java,
             "calculator.db"
-        ).build()
+        )
+            .addMigrations(MIGRATION_1_2)
+            .build()
     }
 
     @Provides
@@ -56,4 +60,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideHttpClient(): HttpClient = HttpClient(CIO)
+
+    @Provides
+    fun provideCurrencyPrefsDao(db: CalculatorDatabase): CurrencyPrefsDao =
+        db.currencyPrefsDao()
 }

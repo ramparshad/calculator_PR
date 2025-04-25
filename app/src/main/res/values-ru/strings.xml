@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Калькулятор</string>
+	<string name="no_exchange_data">Нет доступных данных обменного курса. Пожалуйста, зайдите в онлайн или перезапустите приложение.</string>
+	<string name="exchange_rates_as_of">Обменные курсы как</string>
+	<string name="TopAppBar_Title">Калькулятор</string>
+	<string name="TopAppBar_Menu">Открытое меню</string>
+	<string name="TopAppBarPurge_History">Удалить историю</string>
+	<string name="NavItem_Calculator">Калькулятор</string>
+	<string name="NavItem_Currency">Валюта</string>
+	<string name="NavItem_Units">Единицы</string>
+	<string name="Calculator_Error">Ошибка</string>
+	<string name="next_rates_update_in">Следующее обновление обменных курсов в</string>
+	<string name="next_rates_update_in_end">часы</string>
+	<string name="TopAppBar_RefreshRates">Обновить обмены сейчас</string>
+</resources>

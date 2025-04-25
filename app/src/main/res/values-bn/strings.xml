@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">ক্যালকুলেটর</string>
+	<string name="no_exchange_data">কোনও এক্সচেঞ্জ রেট ডেটা উপলব্ধ নেই। অনলাইনে যান বা অ্যাপটি পুনরায় চালু করুন।</string>
+	<string name="exchange_rates_as_of">হিসাবে বিনিময় হার</string>
+	<string name="TopAppBar_Title">ক্যালকুলেটর</string>
+	<string name="TopAppBar_Menu">খোলা মেনু</string>
+	<string name="TopAppBarPurge_History">ইতিহাস মুছুন</string>
+	<string name="NavItem_Calculator">ক্যালকুলেটর</string>
+	<string name="NavItem_Currency">মুদ্রা</string>
+	<string name="NavItem_Units">ইউনিট</string>
+	<string name="Calculator_Error">ত্রুটি</string>
+	<string name="next_rates_update_in">পরবর্তী বিনিময় হার আপডেট</string>
+	<string name="next_rates_update_in_end">ঘন্টা</string>
+	<string name="TopAppBar_RefreshRates">রিফ্রেশ এক্সচেঞ্জের হার এখন</string>
+</resources>

@@ -1,10 +1,12 @@
 package com.metzger100.calculator.features.calculator.viewmodel
 
+import android.app.Application
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.ezylang.evalex.Expression
+import com.metzger100.calculator.R
 import com.metzger100.calculator.data.CalculatorRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -14,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
-    private val repository: CalculatorRepository
+    private val repository: CalculatorRepository,
+    private val application: Application
 ) : ViewModel() {
 
     var history by mutableStateOf(listOf<Pair<String, String>>())
@@ -121,7 +124,7 @@ class CalculatorViewModel @Inject constructor(
             }
 
         } catch (e: Exception) {
-            previewResult = "Error"
+            previewResult = application.getString(R.string.Calculator_Error)
         }
     }
 
@@ -142,7 +145,7 @@ class CalculatorViewModel @Inject constructor(
             previewResult = expression.evaluate().numberValue?.toString() ?: ""
             previewResult = formatResult(previewResult)
         } catch (e: Exception) {
-            previewResult = "Error"
+            previewResult = application.getString(R.string.Calculator_Error)
         }
     }
 

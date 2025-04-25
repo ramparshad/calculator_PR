@@ -1,3 +1,15 @@
 <resources>
-    <string name="app_name">calculator</string>
+    <string name="app_name">Calculator</string>
+    <string name="no_exchange_data">No exchange rate data available. Please go online or restart the app.</string>
+    <string name="exchange_rates_as_of">Exchange rates as of</string>
+    <string name="TopAppBar_Title">Calculator</string>
+    <string name="TopAppBar_Menu">Open Menu</string>
+    <string name="TopAppBarPurge_History">Delete History</string>
+    <string name="NavItem_Calculator">Calculator</string>
+    <string name="NavItem_Currency">Currency</string>
+    <string name="NavItem_Units">Units</string>
+    <string name="Calculator_Error">Error</string>
+    <string name="next_rates_update_in">Next exchange rates update in</string>
+    <string name="next_rates_update_in_end">hours</string>
+    <string name="TopAppBar_RefreshRates">Refresh exchanges rates now</string>
 </resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">कैलकुलेटर</string>
+	<string name="no_exchange_data">कोई विनिमय दर डेटा उपलब्ध नहीं है। कृपया ऑनलाइन जाएं या ऐप को पुनरारंभ करें।</string>
+	<string name="exchange_rates_as_of">के रूप में विनिमय दरों</string>
+	<string name="TopAppBar_Title">कैलकुलेटर</string>
+	<string name="TopAppBar_Menu">खुला मेनू</string>
+	<string name="TopAppBarPurge_History">हिस्ट्री हटाएं</string>
+	<string name="NavItem_Calculator">कैलकुलेटर</string>
+	<string name="NavItem_Currency">मुद्रा</string>
+	<string name="NavItem_Units">इकाइयों</string>
+	<string name="Calculator_Error">गलती</string>
+	<string name="next_rates_update_in">अगली विनिमय दरों में अपडेट</string>
+	<string name="next_rates_update_in_end">घंटे</string>
+	<string name="TopAppBar_RefreshRates">अब एक्सचेंजों की दरों को ताज़ा करें</string>
+</resources>

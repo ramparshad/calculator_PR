@@ -1,33 +1,52 @@
 package com.metzger100.calculator.data.local
 
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [
         CalculationEntity::class,
         CurrencyRateEntity::class,
-        CurrencyListEntity::class
+        CurrencyListEntity::class,
+        CurrencyPrefsEntity::class
     ],
-    version = 1
+    version = 2
 )
 abstract class CalculatorDatabase : RoomDatabase() {
     abstract fun calculationDao(): CalculationDao
     abstract fun currencyRateDao(): CurrencyRateDao
     abstract fun currencyListDao(): CurrencyListDao
+    abstract fun currencyPrefsDao(): CurrencyPrefsDao
+}
 
-    companion object {
-        // falls Version geändert, bei Dev am einfachsten:
-        fun getDatabase(context: Context): CalculatorDatabase {
-            return Room.databaseBuilder(
-                context.applicationContext,
-                CalculatorDatabase::class.java,
-                "calculator_db"
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // 1) neue Tabelle anlegen
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `currency_prefs` (
+                `id` INTEGER NOT NULL PRIMARY KEY,
+                `activeField` INTEGER NOT NULL,
+                `currency1` TEXT NOT NULL,
+                `currency2` TEXT NOT NULL,
+                `amount1` TEXT NOT NULL,
+                `amount2` TEXT NOT NULL
             )
-                .fallbackToDestructiveMigration(false)
-                .build()
-        }
+            """.trimIndent()
+        )
+
+        // 2) optional: einen Default-Datensatz einfügen,
+        //    damit get() nicht null zurückgibt
+        db.execSQL(
+            """
+            INSERT OR IGNORE INTO `currency_prefs`
+                (id, activeField, currency1, currency2, amount1, amount2)
+            VALUES
+                (1, 1, 'USD', 'EUR', '1', '0')
+            """
+        )
     }
 }
+
