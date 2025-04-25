@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,9 +31,13 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
     val lastUpdated by viewModel.lastUpdated
 
     // nur wichtige Währungen filtern
-    val filtered = currenciesWithTitles
-        .filter { (code, _) -> MajorCurrencyCodes.contains(code) }
-        .sortedBy { MajorCurrencyCodes.indexOf(it.first) }
+    val filtered by remember(currenciesWithTitles) {
+        derivedStateOf {
+            currenciesWithTitles
+                .filter { (code, _) -> MajorCurrencyCodes.contains(code) }
+                .sortedBy { MajorCurrencyCodes.indexOf(it.first) }
+        }
+    }
 
     // fallback, falls die API-Liste noch leer oder gefiltert leer ist
     val codeList = when {
@@ -162,12 +167,14 @@ private fun CurrencyRow(
         )
     } else Modifier
 
+    val cardModifier = Modifier
+        .fillMaxWidth()
+        .height(56.dp)
+        .then(borderModifier)
+        .clickable { onClick() }
+
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .then(borderModifier)
-            .clickable { onClick() },
+        modifier = cardModifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
@@ -228,11 +235,12 @@ private fun CurrencySelectorDialog(
             val listState = rememberLazyListState()
             LazyColumn(
                 state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier = Modifier.fillMaxSize()
             ) {
-                items(currencies.size) { index ->
-                    val (code, title) = currencies[index]
+                items(
+                    items = currencies,
+                    key   = { (code, _) -> code }
+                ) { (code, title) ->
                     ListItem(
                         headlineContent = { Text(title) },
                         modifier = Modifier

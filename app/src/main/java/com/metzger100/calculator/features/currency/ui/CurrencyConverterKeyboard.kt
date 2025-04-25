@@ -3,7 +3,7 @@ package com.metzger100.calculator.features.currency.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -76,9 +76,12 @@ fun CurrencyConverterButton(
     val buttonColor = MaterialTheme.colorScheme.surfaceVariant
     val textColor = MaterialTheme.colorScheme.onSurface
 
+    // Reusable modifier for the clickable surface
+    val surfaceModifier = modifier
+        .clickable { onClick() }
+
     Surface(
-        modifier = modifier
-            .clickable { onClick() },
+        modifier = surfaceModifier,
         color = buttonColor,
         tonalElevation = 4.dp,
         shadowElevation = 2.dp,
@@ -89,7 +92,7 @@ fun CurrencyConverterButton(
             modifier = Modifier.fillMaxSize()
         ) {
             when (label) {
-                "←" -> Icon(Icons.Default.Backspace, contentDescription = "Backspace")
+                "←" -> Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = "Backspace")
                 else -> Text(
                     text = label,
                     fontSize = 24.sp,

@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
-import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -100,8 +99,11 @@ fun ScientificButton(
         MaterialTheme.colorScheme.onSurface
     }
 
+    val surfaceModifier = modifier
+        .clickable { onClick() }
+
     Surface(
-        modifier = modifier
+        modifier = surfaceModifier
             .clickable { onClick() },
         color = buttonColor,
         tonalElevation = 4.dp,

@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
 
 fun MainActivity.setHighRefreshRate() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        val display = display ?: return  // context.getDisplay()
+        val display = display ?: return
         val highestMode = display.supportedModes
             .maxByOrNull { it.refreshRate }
 

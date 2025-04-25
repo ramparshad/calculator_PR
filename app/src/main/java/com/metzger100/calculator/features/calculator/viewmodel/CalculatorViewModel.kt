@@ -8,6 +8,7 @@ import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.ezylang.evalex.Expression
 import com.metzger100.calculator.R
 import com.metzger100.calculator.data.CalculatorRepository
+import com.metzger100.calculator.data.local.CalculationEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -20,7 +21,7 @@ class CalculatorViewModel @Inject constructor(
     private val application: Application
 ) : ViewModel() {
 
-    var history by mutableStateOf(listOf<Pair<String, String>>())
+    var history by mutableStateOf(listOf<CalculationEntity>())
         private set
 
     init {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="app_name">Taschenrechner</string>
+	<string name="app_name">Rechner</string>
 	<string name="no_exchange_data">Keine Wechselkursdaten verfügbar. Bitte gehen Sie online oder starten Sie die App neu.</string>
 	<string name="exchange_rates_as_of">Wechselkurse vom</string>
 	<string name="TopAppBar_Title">Rechner</string>

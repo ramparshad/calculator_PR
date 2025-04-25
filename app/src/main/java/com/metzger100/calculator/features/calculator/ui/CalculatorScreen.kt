@@ -20,6 +20,11 @@ import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewMod
 fun CalculatorScreen(viewModel: CalculatorViewModel) {
     var keyboardVisible by remember { mutableStateOf(false) }
 
+    // Verwenden von derivedStateOf für die umgekehrte Liste
+    val reversedHistory = remember(viewModel.history) {
+        derivedStateOf { viewModel.history.reversed() }
+    }
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -43,26 +48,36 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             modifier = Modifier.fillMaxSize()
         ) {
             // History (nimmt den verfügbaren Platz ein)
-            Box(modifier = Modifier.weight(1f)) {
+            val historyModifier = Modifier
+                .fillMaxSize()
+                .weight(1f)
+
+            Box(modifier = historyModifier) {
+                // CalculatorScreen.kt
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
                     reverseLayout = true,
                     contentPadding = PaddingValues(bottom = 4.dp),
                 ) {
-                    items(viewModel.history.reversed()) { (input, result) ->
+                    items(
+                        items = reversedHistory.value,
+                        key   = { entry -> entry.id }             // ← STABLE KEY
+                    ) { entry ->
                         Column {
                             Text(
-                                input.split(" ").joinToString(" ") { mapToDisplaySymbols(it) },
+                                entry.input
+                                    .split(" ")
+                                    .joinToString(" ") { mapToDisplaySymbols(it) },
                                 style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 20.sp
                                 )
                             )
                             Text(
-                                "= $result",
+                                "= ${entry.result}",
                                 style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 20.sp
                                 )
                             )
@@ -73,10 +88,16 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             }
 
             // Eingabezeile (dynamische Höhe)
+            val cardModifier = Modifier
+                .fillMaxWidth()
+                .clickable { keyboardVisible = true }
+
+            val cardContentModifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { keyboardVisible = true },
+                modifier = cardModifier,
                 shape = MaterialTheme.shapes.medium,
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -84,9 +105,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = cardContentModifier,
                     horizontalAlignment = Alignment.End
                 ) {
                     if (viewModel.previewResult.isNotEmpty()) {

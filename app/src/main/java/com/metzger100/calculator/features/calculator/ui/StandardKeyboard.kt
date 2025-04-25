@@ -3,7 +3,7 @@ package com.metzger100.calculator.features.calculator.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,28 +33,33 @@ fun StandardKeyboard(
         listOf("⇄", "0", ",", "=")
     )
 
+    // Extrahierter Modifier für das gesamte Layout
+    val columnModifier = Modifier
+        .fillMaxSize()
+        .padding(top = 4.dp)
+
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 4.dp),
+            modifier = columnModifier,
             verticalArrangement = Arrangement.spacedBy(buttonSpacing)
         ) {
             buttons.forEach { row ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f), // <-- Jede Zeile gleich hoch
+                        .weight(1f), // Jede Zeile gleich hoch
                     horizontalArrangement = Arrangement.spacedBy(buttonSpacing)
                 ) {
                     row.forEach { label ->
+                        // Reuse des gemeinsamen Modifiers
+                        val buttonModifier = Modifier
+                            .weight(1f)
+
                         CalculatorButton(
                             label = label,
-                            modifier = Modifier
-                                .weight(1f),
+                            modifier = buttonModifier,
                             onClick = {
                                 when (label) {
                                     "C" -> onClear()
@@ -92,9 +97,12 @@ fun CalculatorButton(
         MaterialTheme.colorScheme.onSurface
     }
 
+    // Extrahierter Modifier für die Button-Oberfläche
+    val surfaceModifier = modifier
+        .clickable { onClick() }
+
     Surface(
-        modifier = modifier
-            .clickable { onClick() },
+        modifier = surfaceModifier,
         color = buttonColor,
         tonalElevation = 4.dp,
         shadowElevation = 2.dp,
@@ -105,7 +113,7 @@ fun CalculatorButton(
             modifier = Modifier.fillMaxSize()
         ) {
             when (label) {
-                "←" -> Icon(Icons.Default.Backspace, contentDescription = "Backspace")
+                "←" -> Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = "Backspace")
                 "⇄" -> Icon(Icons.Default.SwapHoriz, contentDescription = "Mode Switch")
                 else -> Text(
                     text = label,
@@ -127,7 +135,6 @@ fun isHighlightedButton(label: String): Boolean {
 fun isFadedButton(label: String): Boolean {
     return when (label) {
         "INV", "deg", "sin⁻¹", "cos⁻¹", "tan⁻¹", "lg", "ln", "(", ")", "√", "x!", "1/x", "π", "e", "sin", "cos", "tan", "^" -> true
-
         else -> false
     }
 }

@@ -9,8 +9,8 @@ class CalculatorRepository(private val calcdao: CalculationDao) {
         calcdao.insert(CalculationEntity(input = input, result = result))
     }
 
-    suspend fun getHistory(): List<Pair<String, String>> {
-        return calcdao.getAll().map { it.input to it.result }
+    suspend fun getHistory(): List<CalculationEntity> {
+        return calcdao.getAll()
     }
 
     suspend fun clearHistory() {
