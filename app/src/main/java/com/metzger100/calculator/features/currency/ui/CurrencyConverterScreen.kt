@@ -24,11 +24,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.Constants.MajorCurrencyCodes
-import java.text.SimpleDateFormat
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -36,7 +36,6 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
     // Währungsdaten mit Code und Titel
     val currenciesWithTitles by viewModel.currenciesWithTitles
     val rates by viewModel.rates
-    val lastUpdated by viewModel.lastUpdated
     val lastApiDate by viewModel.lastApiDate
 
     // nur wichtige Währungen filtern
@@ -105,7 +104,6 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
 
         ExchangeRateInfo(
             lastApiDate            = lastApiDate,
-            lastUpdatedTimestamp   = lastUpdated,
             modifier               = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = keyboardHeight + 8.dp)
@@ -135,48 +133,60 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
 
 @Composable
 fun ExchangeRateInfo(
-    lastApiDate: LocalDate?,
-    lastUpdatedTimestamp: Long?,
+    lastApiDate: LocalDate?,        // null = kein Cache
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .padding(bottom = 8.dp),
+        modifier = modifier.padding(bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // 1) API-Datum
-        lastApiDate?.let { apiDate ->
+        val nowUtc    = Instant.now().atOffset(ZoneOffset.UTC)
+        val todayUtc  = nowUtc.toLocalDate()
+        val threshold = todayUtc
+            .atTime(2, 0)
+            .atOffset(ZoneOffset.UTC)
+            .toInstant()
+
+        // 1) exchange_rates_as_of
+        if (lastApiDate == null) {
+            Text(
+                text = stringResource(id = R.string.no_data_available),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        } else {
             Text(
                 text = stringResource(id = R.string.exchange_rates_as_of) + " " +
-                        apiDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
+                        lastApiDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
 
-        // 2) letzter Pull + Stunden bis zum nächsten Pull
-        lastUpdatedTimestamp?.let { timestamp ->
-            // formatiertes Pull-Datum + Uhrzeit
-            val pullTime = remember(timestamp) {
-                SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
-                    .format(Date(timestamp))
-            }
-            // Stunden bis zum nächsten Pull (alle 12 h)
-            val hoursUntilNext = remember(timestamp) {
-                val next = timestamp + 12 * 60 * 60 * 1000L
-                ((next - System.currentTimeMillis()) / (1000 * 60 * 60)).coerceAtLeast(0)
-            }
+        Spacer(modifier = Modifier.height(4.dp))
 
+        // 2) next update / pending
+        if (lastApiDate == null || (nowUtc.toInstant() >= threshold && lastApiDate.isBefore(todayUtc))) {
+            // kein Cache ODER nach 02:00 UTC und API-Datum < heute
             Text(
-                text = stringResource(id = R.string.last_pull_label) + " " + pullTime,
+                text = stringResource(id = R.string.update_due),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
+        } else {
+            // normales nächste Update-Datum in lokaler Zeit
+            val nextDateUtc = if (nowUtc.hour < 2) todayUtc else todayUtc.plusDays(1)
+            val nextUtcInst = nextDateUtc
+                .atTime(2, 0)
+                .atOffset(ZoneOffset.UTC)
+                .toInstant()
+            val nextLocal = nextUtcInst
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime()
+                .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
 
             Text(
-                text = stringResource(id = R.string.next_rates_update_in) + " " +
-                        hoursUntilNext + " " +
-                        stringResource(id = R.string.next_rates_update_in_end),
+                text = stringResource(id = R.string.next_rates_update) + " " + nextLocal,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )

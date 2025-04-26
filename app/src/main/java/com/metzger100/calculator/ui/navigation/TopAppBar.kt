@@ -37,7 +37,7 @@ fun TopAppBar(
                 onDismissRequest = { menuExpanded = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.TopAppBarPurge_History)) },
+                    text = { Text(stringResource(R.string.TopAppBar_PurgeHistory)) },
                     onClick = {
                         onClearHistory()
                         menuExpanded = false
@@ -45,7 +45,7 @@ fun TopAppBar(
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.TopAppBarPurge_History)
+                            contentDescription = stringResource(R.string.TopAppBar_PurgeHistory)
                         )
                     }
                 )
