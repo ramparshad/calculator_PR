@@ -34,7 +34,7 @@ fun ScientificKeyboard(
         listOf("x!", "7", "8", "9", "×"),
         listOf("1/x", "4", "5", "6", "−"),
         listOf("π", "1", "2", "3", "+"),
-        listOf("⇄", "e", "0", ",", "=")
+        listOf("⇄", "e", "0", ".", "=")
     )
 
     Box(
@@ -134,7 +134,6 @@ fun mapScientificSymbol(symbol: String, isDegreeMode: Boolean): String {
                 "÷" -> "/"
                 "×" -> "*"
                 "−" -> "-"
-                "," -> "."
                 "π" -> "PI"
                 "^" -> "^"
                 "√" -> "SQRT("
@@ -156,7 +155,6 @@ fun mapScientificSymbol(symbol: String, isDegreeMode: Boolean): String {
                 "÷" -> "/"
                 "×" -> "*"
                 "−" -> "-"
-                "," -> "."
                 "π" -> "PI"
                 "^" -> "^"
                 "√" -> "SQRT("

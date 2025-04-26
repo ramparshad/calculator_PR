@@ -35,44 +35,47 @@ class CurrencyRepository @Inject constructor(
     /** Gibt eine Map von Währungscode → Kurs zurück (Basis = [base]). */
     suspend fun getRates(base: String, forceRefresh: Boolean = false): Map<String, Double> = withContext(ioDispatcher) {
         val now = System.currentTimeMillis()
-        val cutoff = now - 12 * 3_600_000L  // vor 12 Stunden
-
-        Log.d(TAG, "getRates: Checking cache for base currency: $base")
-
+        val cutoff = now - 12 * 3_600_000L  // 12 Stunden
         val cached = rateDao.get(base)
-        val rawJson = try {
-            if (forceRefresh || cached == null || cached.timestamp <= cutoff) {
-                Log.d(TAG, "getRates: Cache expired, not available or force refresh triggered, fetching fresh rates for $base")
+
+        val shouldRefresh = forceRefresh || cached == null || cached.timestamp <= cutoff
+
+        val rawJson = if (shouldRefresh) {
+            try {
+                Log.d(TAG, "getRates: Attempting to fetch fresh rates for $base...")
                 val fresh = fetchRatesJson(base)
-                rateDao.upsert(CurrencyRateEntity(base = base, json = fresh, timestamp = now))
-                fresh
-            } else {
-                Log.d(TAG, "getRates: Using cached data for $base. Cached timestamp: ${cached.timestamp}, current time: $now")
-                Log.d(TAG, "getRates: Cached data age: ${(now - cached.timestamp) / 1000} seconds")
-                cached.json
+                // Nur wenn Daten nicht leer sind, den Cache überschreiben
+                if (fresh != "{}") {
+                    Log.d(TAG, "getRates: Fresh data fetched successfully, updating cache.")
+                    rateDao.upsert(CurrencyRateEntity(base = base, json = fresh, timestamp = now))
+                    fresh
+                } else {
+                    Log.w(TAG, "getRates: Fresh data is empty, falling back to cache.")
+                    cached?.json ?: "{}"
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "getRates: Error fetching fresh rates: ${e.localizedMessage}")
+                cached?.json ?: "{}"
             }
-        } catch (_: Exception) {
-            Log.e(TAG, "getRates: Error fetching rates for $base, using cache if available.")
-            // Kein Netz → wenn Cache da, nimm ihn, sonst "{}"
+        } else {
+            Log.d(TAG, "getRates: Using cached data.")
             cached?.json ?: "{}"
         }
 
-        // Parsen: "{}" oder fehlerhaftes JSON → leere Map
+        // Parsen und Rückgabe
         val root = try {
             gson.fromJson(rawJson, JsonObject::class.java)
-        } catch (_: Exception) {
-            Log.e(TAG, "getRates: Error parsing JSON data for $base.")
+        } catch (e: Exception) {
+            Log.e(TAG, "getRates: JSON parsing failed: ${e.localizedMessage}")
             null
         }
 
         if (root == null || !root.has(base.lowercase())) {
-            Log.d(TAG, "getRates: No valid data found for $base.")
+            Log.d(TAG, "getRates: No valid data for base $base.")
             emptyMap()
         } else {
             val ratesObj = root.getAsJsonObject(base.lowercase())
-            val ratesMap = ratesObj.entrySet().associate { it.key to it.value.asDouble }
-            Log.d(TAG, "getRates: Successfully fetched rates for $base: $ratesMap")
-            ratesMap
+            ratesObj.entrySet().associate { it.key to it.value.asDouble }
         }
     }
 
@@ -105,7 +108,7 @@ class CurrencyRepository @Inject constructor(
         // Phase 2: @latest
         runCatching {
             val latestUrl = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/$lower.json"
-            Log.d(TAG, "fetchRatesJson: falling back to @latest")
+            Log.d(TAG, "fetchRatesJson: falling back to @latest: $latestUrl")
             return httpClient.get(latestUrl).bodyAsText()
         }.onFailure {
             Log.d(TAG, "fetchRatesJson: @latest fetch failed, will try pages.dev")
@@ -134,39 +137,42 @@ class CurrencyRepository @Inject constructor(
     suspend fun getAvailableCurrenciesWithTitles(forceRefresh: Boolean = false): List<Pair<String, String>> =
         withContext(ioDispatcher) {
             val now = System.currentTimeMillis()
-            val cutoff = now - 12 * 3_600_000L  // vor 12 Stunden
-
-            Log.d(TAG, "getAvailableCurrenciesWithTitles: Checking cache for currencies list.")
-
+            val cutoff = now - 12 * 3_600_000L  // 12 Stunden
             val cached = listDao.get()
-            val rawJson = if (!forceRefresh && cached != null && cached.timestamp > cutoff) {
-                Log.d(TAG, "getAvailableCurrenciesWithTitles: Using cached currency list. Cached timestamp: ${cached.timestamp}, current time: $now")
-                Log.d(TAG, "getAvailableCurrenciesWithTitles: Cached list age: ${(now - cached.timestamp) / 1000} seconds")
-                cached.json
+
+            val shouldRefresh = forceRefresh || cached == null || cached.timestamp <= cutoff
+
+            val rawJson = if (shouldRefresh) {
+                try {
+                    Log.d(TAG, "getAvailableCurrenciesWithTitles: Fetching fresh currency list...")
+                    val freshJson = fetchCurrenciesJsonWithNetworkFallback()
+                    if (freshJson != "{}") {
+                        Log.d(TAG, "getAvailableCurrenciesWithTitles: Successfully fetched fresh list, updating cache.")
+                        listDao.upsert(CurrencyListEntity(json = freshJson, timestamp = now))
+                        freshJson
+                    } else {
+                        Log.w(TAG, "getAvailableCurrenciesWithTitles: Received empty JSON, falling back to cache.")
+                        cached?.json ?: "{}"
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "getAvailableCurrenciesWithTitles: Error fetching list: ${e.localizedMessage}")
+                    cached?.json ?: "{}"
+                }
             } else {
-                // Versuche Primary & Fallback, aber im Fehlerfall einfach "{}" nehmen
-                Log.d(TAG, "getAvailableCurrenciesWithTitles: Cache expired, not available or force refresh triggered, fetching fresh currency list.")
-                val freshJson = try {
-                    fetchCurrenciesJsonWithNetworkFallback()
-                } catch (_: Exception) {
-                    Log.e(TAG, "getAvailableCurrenciesWithTitles: Error fetching currency list.")
-                    "{}"
-                }
-                // Falls wir wirklich was geholt haben, upserten:
-                if (freshJson != "{}") {
-                    listDao.upsert(CurrencyListEntity(json = freshJson, timestamp = now))
-                }
-                freshJson
+                Log.d(TAG, "getAvailableCurrenciesWithTitles: Using cached currency list.")
+                cached?.json ?: "{}"
             }
 
-            // Parsen – "{}" ergibt einfach eine leere Map
-            val root = gson.fromJson(rawJson, JsonObject::class.java)
-            val currencies = root.entrySet()
-                .map { it.key.uppercase() to it.value.asString }
-                .sortedBy { it.first }
-
-            Log.d(TAG, "getAvailableCurrenciesWithTitles: Successfully fetched currencies: $currencies")
-            currencies
+            // Parsen – "{}" ergibt einfach eine leere Liste
+            return@withContext try {
+                val root = gson.fromJson(rawJson, JsonObject::class.java)
+                root.entrySet()
+                    .map { it.key.uppercase() to it.value.asString }
+                    .sortedBy { it.first }
+            } catch (e: Exception) {
+                Log.e(TAG, "getAvailableCurrenciesWithTitles: JSON parsing failed: ${e.localizedMessage}")
+                emptyList()
+            }
         }
 
     /** Holt currencies.min.json zuerst vom CDN, bei Fehlern vom Pages-dev-Fallback. */
@@ -194,7 +200,7 @@ class CurrencyRepository @Inject constructor(
         // Phase 2: jsDelivr @latest
         runCatching {
             val latestUrl = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.min.json"
-            Log.d(TAG, "fetchCurrenciesJson: falling back to @latest")
+            Log.d(TAG, "fetchCurrenciesJson: falling back to @latest: $latestUrl")
             return httpClient.get(latestUrl).bodyAsText()
         }.onFailure {
             Log.d(TAG, "fetchCurrenciesJson: @latest fetch failed, will try pages.dev")
@@ -221,5 +227,4 @@ class CurrencyRepository @Inject constructor(
 
     suspend fun getPrefs(): CurrencyPrefsEntity? = prefsDao.get()
     suspend fun savePrefs(p: CurrencyPrefsEntity) = prefsDao.upsert(p)
-
 }

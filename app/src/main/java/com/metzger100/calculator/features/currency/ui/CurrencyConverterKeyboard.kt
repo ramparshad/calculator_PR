@@ -27,7 +27,7 @@ fun CurrencyConverterKeyboard(
         listOf("7", "8", "9", "C"),
         listOf("4", "5", "6", ""),
         listOf("1", "2", "3", ""),
-        listOf("00", "0", ",", "←")
+        listOf("00", "0", ".", "←")
     )
 
     Box(

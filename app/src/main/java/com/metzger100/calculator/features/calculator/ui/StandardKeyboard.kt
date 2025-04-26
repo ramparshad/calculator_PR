@@ -30,7 +30,7 @@ fun StandardKeyboard(
         listOf("7", "8", "9", "×"),
         listOf("4", "5", "6", "−"),
         listOf("1", "2", "3", "+"),
-        listOf("⇄", "0", ",", "=")
+        listOf("⇄", "0", ".", "=")
     )
 
     // Extrahierter Modifier für das gesamte Layout
@@ -144,7 +144,6 @@ fun mapSymbol(symbol: String): String {
         "÷" -> "/"
         "×" -> "*"
         "−" -> "-"
-        "," -> "."
         else -> symbol
     }
 }

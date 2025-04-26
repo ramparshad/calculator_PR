@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
@@ -91,19 +92,19 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 ) {
                     if (viewModel.previewResult.isNotEmpty()) {
                         Text(
-                            text = viewModel.input,
+                            text = displayifyExpression(viewModel.input),
                             style = MaterialTheme.typography.headlineLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "= ${viewModel.previewResult}",
+                            text = "= ${displayifyExpression(viewModel.previewResult)}",
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                     } else {
                         Text(
-                            text = viewModel.input,
+                            text = displayifyExpression(viewModel.input),
                             style = MaterialTheme.typography.headlineLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -147,6 +148,31 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     }
 }
 
+fun displayifyExpression(expr: String): String {
+    return expr
+        .replace("/", "÷")
+        .replace("*", "×")
+        .replace("-", "−")
+        .replace("PI", "π")
+        .replace("SQRT(", "√(")
+        .replace("1/(", "1/(")
+        .replace("FACT(", "x!(")
+        .replace("LOG10(", "lg(")
+        .replace("LOG(", "ln(")
+        .replace("ASINR(", "sin⁻¹(")
+        .replace("ACOSR(", "cos⁻¹(")
+        .replace("ATANR(", "tan⁻¹(")
+        .replace("ASIN(", "sin⁻¹(")
+        .replace("ACOS(", "cos⁻¹(")
+        .replace("ATAN(", "tan⁻¹(")
+        .replace("SINR(", "sin(")
+        .replace("COSR(", "cos(")
+        .replace("TANR(", "tan(")
+        .replace("SIN(", "sin(")
+        .replace("COS(", "cos(")
+        .replace("TAN(", "tan(")
+}
+
 // --- RecyclerView Adapter & ViewHolder ---
 
 private class CalculationAdapter(
@@ -157,8 +183,10 @@ private class CalculationAdapter(
     private var items: List<com.metzger100.calculator.data.local.CalculationEntity> = emptyList()
 
     fun updateData(newItems: List<com.metzger100.calculator.data.local.CalculationEntity>) {
+        val diffCallback = CalculationDiffCallback(items, newItems)
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
         items = newItems
-        notifyDataSetChanged()
+        diffResult.dispatchUpdatesTo(this)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CalculationViewHolder {
@@ -188,8 +216,24 @@ private class CalculationAdapter(
 
     override fun onBindViewHolder(holder: CalculationViewHolder, position: Int) {
         val entry = items[position]
-        holder.inputView.text = entry.input
+        holder.inputView.text = displayifyExpression(entry.input)
         holder.resultView.text = "= ${entry.result}"
+    }
+}
+
+class CalculationDiffCallback(
+    private val oldList: List<com.metzger100.calculator.data.local.CalculationEntity>,
+    private val newList: List<com.metzger100.calculator.data.local.CalculationEntity>
+) : DiffUtil.Callback() {
+    override fun getOldListSize(): Int = oldList.size
+    override fun getNewListSize(): Int = newList.size
+
+    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        return oldList[oldItemPosition].id == newList[newItemPosition].id
+    }
+
+    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        return oldList[oldItemPosition] == newList[newItemPosition]
     }
 }
 
