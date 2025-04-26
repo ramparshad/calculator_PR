@@ -57,7 +57,7 @@ class CurrencyRepository @Inject constructor(
                 || cachedEntity == null
                 || (nowUtcHour >= 2 && cachedApiDate != nowUtcDate)
 
-        Log.d(TAG, "getCurrencies: Checking for update - forceRefresh=$forceRefresh, cachedEntityIsNull=${cachedEntity == null}, timeConditionMet=${nowUtcHour >= 2 && cachedApiDate != nowUtcDate}")
+        Log.d(TAG, "getRates: Checking for update - forceRefresh=$forceRefresh, cachedEntityIsNull=${cachedEntity == null}, timeConditionMet=${nowUtcHour >= 2 && cachedApiDate != nowUtcDate}")
 
         val rawJson = if (shouldRefresh) {
             try {
