@@ -57,6 +57,8 @@ class CurrencyRepository @Inject constructor(
                 || cachedEntity == null
                 || (nowUtcHour >= 2 && cachedApiDate != nowUtcDate)
 
+        Log.d(TAG, "getCurrencies: Checking for update - forceRefresh=$forceRefresh, cachedEntityIsNull=${cachedEntity == null}, timeConditionMet=${nowUtcHour >= 2 && cachedApiDate != nowUtcDate}")
+
         val rawJson = if (shouldRefresh) {
             try {
                 Log.d(TAG, "getRates: Attempting to fetch fresh rates for $base...")
@@ -157,7 +159,7 @@ class CurrencyRepository @Inject constructor(
         return "{}"
     }
 
-    suspend fun getAvailableCurrenciesWithTitles(forceRefresh: Boolean = false): List<Pair<String, String>> =
+    suspend fun getCurrencies(forceRefresh: Boolean = false): List<Pair<String, String>> =
         withContext(ioDispatcher) {
             val nowMillis   = System.currentTimeMillis()
             val nowUtcDate  = LocalDate.now(ZoneOffset.UTC)
@@ -178,24 +180,26 @@ class CurrencyRepository @Inject constructor(
                     || cachedEntity == null
                     || (nowUtcHour >= 2 && cacheDateUtc != nowUtcDate)
 
+            Log.d(TAG, "getCurrencies: Checking for update - forceRefresh=$forceRefresh, cachedEntityIsNull=${cachedEntity == null}, timeConditionMet=${nowUtcHour >= 2 && cacheDateUtc != nowUtcDate}")
+
             val rawJson = if (shouldRefresh) {
                 try {
-                    Log.d(TAG, "getAvailableCurrenciesWithTitles: Fetching fresh currency list...")
+                    Log.d(TAG, "getCurrencies: Fetching fresh currency list...")
                     val freshJson = fetchCurrenciesJson()
                     if (freshJson != "{}") {
-                        Log.d(TAG, "getAvailableCurrenciesWithTitles: Successfully fetched fresh list, updating cache.")
+                        Log.d(TAG, "getCurrencies: Successfully fetched fresh list, updating cache.")
                         listDao.upsert(CurrencyListEntity(json = freshJson, timestamp = nowMillis))
                         freshJson
                     } else {
-                        Log.w(TAG, "getAvailableCurrenciesWithTitles: Received empty JSON, falling back to cache.")
+                        Log.w(TAG, "getCurrencies: Received empty JSON, falling back to cache.")
                         cachedEntity?.json ?: "{}"
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "getAvailableCurrenciesWithTitles: Error fetching list: ${e.localizedMessage}")
+                    Log.e(TAG, "getCurrencies: Error fetching list: ${e.localizedMessage}")
                     cachedEntity?.json ?: "{}"
                 }
             } else {
-                Log.d(TAG, "getAvailableCurrenciesWithTitles: Using cached currency list.")
+                Log.d(TAG, "getCurrencies: Using cached currency list.")
                 cachedEntity?.json ?: "{}"
             }
 
@@ -206,7 +210,7 @@ class CurrencyRepository @Inject constructor(
                     .map { it.key.uppercase() to it.value.asString }
                     .sortedBy { it.first }
             } catch (e: Exception) {
-                Log.e(TAG, "getAvailableCurrenciesWithTitles: JSON parsing failed: ${e.localizedMessage}")
+                Log.e(TAG, "getCurrencies: JSON parsing failed: ${e.localizedMessage}")
                 emptyList()
             }
         }

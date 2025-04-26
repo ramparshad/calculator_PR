@@ -50,7 +50,7 @@ class CurrencyViewModel @Inject constructor(
                 value2        = p.amount2
             }
             // Lade Währungen und deren Titel
-            _currenciesWithTitles.value = repo.getAvailableCurrenciesWithTitles()
+            _currenciesWithTitles.value = repo.getCurrencies()
             // Lade Kurse für die Standard-Base
             _rates.value = repo.getRates(_base.value)
             _lastApiDate.value = repo.getLastApiDateForBase(_base.value)
@@ -107,7 +107,7 @@ class CurrencyViewModel @Inject constructor(
 
     fun refreshData() {
         viewModelScope.launch {
-            _currenciesWithTitles.value = repo.getAvailableCurrenciesWithTitles()
+            _currenciesWithTitles.value = repo.getCurrencies()
             _rates.value = repo.getRates(_base.value)
             _lastApiDate.value = repo.getLastApiDateForBase(_base.value)
         }
@@ -116,7 +116,7 @@ class CurrencyViewModel @Inject constructor(
     fun forceRefreshData(newBase: String) {
         _base.value = newBase
         viewModelScope.launch {
-            _currenciesWithTitles.value = repo.getAvailableCurrenciesWithTitles(forceRefresh = true)
+            _currenciesWithTitles.value = repo.getCurrencies(forceRefresh = true)
             _rates.value = repo.getRates(newBase, forceRefresh = true)
             _lastApiDate.value = repo.getLastApiDateForBase(newBase)
         }
