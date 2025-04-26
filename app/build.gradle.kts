@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.splitties.views.recyclerview)
     //evalex
     implementation(libs.evalex)
+    implementation(libs.evalex.big.math)
     // room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

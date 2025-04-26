@@ -5,7 +5,7 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
-import com.ezylang.evalex.Expression
+import com.ezylang.evalex.bigmath.BigMathExpression
 import com.metzger100.calculator.R
 import com.metzger100.calculator.data.CalculatorRepository
 import com.metzger100.calculator.data.local.CalculationEntity
@@ -106,7 +106,7 @@ class CalculatorViewModel @Inject constructor(
                 input
             }
 
-            val expression = Expression(finalInput)
+            val expression = BigMathExpression(finalInput)
             val result = expression.evaluate().numberValue
 
             if (result != null) {
@@ -142,7 +142,7 @@ class CalculatorViewModel @Inject constructor(
                 input
             }
 
-            val expression = Expression(finalInput)
+            val expression = BigMathExpression(finalInput)
             previewResult = expression.evaluate().numberValue?.toString() ?: ""
             previewResult = formatResult(previewResult)
         } catch (e: Exception) {
@@ -181,7 +181,7 @@ class CalculatorViewModel @Inject constructor(
 
     private fun formatResult(result: String): String {
         return try {
-            val bigDecimalResult = BigDecimal(result).setScale(6, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+            val bigDecimalResult = BigDecimal(result).setScale(9, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
             bigDecimalResult.toString()
         } catch (e: NumberFormatException) {
             result
