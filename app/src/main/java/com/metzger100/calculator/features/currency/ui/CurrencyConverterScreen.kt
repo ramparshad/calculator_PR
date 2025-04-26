@@ -119,10 +119,10 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
         }
 
         ExchangeRateInfo(
-            lastApiDate            = lastApiDate,
-            modifier               = Modifier
+            lastApiDate = lastApiDate,
+            modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = keyboardHeight + 8.dp)
+                .padding(bottom = keyboardHeight)
         )
 
         // Tastatur
@@ -149,7 +149,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
 
 @Composable
 fun ExchangeRateInfo(
-    lastApiDate: LocalDate?,        // null = kein Cache
+    lastApiDate: LocalDate?,
     modifier: Modifier = Modifier
 ) {
     Column(

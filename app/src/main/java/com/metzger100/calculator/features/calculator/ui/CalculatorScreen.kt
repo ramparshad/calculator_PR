@@ -8,6 +8,9 @@ import android.widget.TextView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,6 +83,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Input card
+            // Input card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -88,30 +92,51 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalAlignment = Alignment.End
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (viewModel.previewResult.isNotEmpty()) {
-                        Text(
-                            text = displayifyExpression(viewModel.input),
-                            style = MaterialTheme.typography.headlineLarge,
-                            color = MaterialTheme.colorScheme.onSurface
+                    // Pfeil Button
+                    IconButton(
+                        onClick = { keyboardVisible = !keyboardVisible }
+                    ) {
+                        Icon(
+                            imageVector = if (keyboardVisible) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
+                            contentDescription = "Toggle Keyboard",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "= ${displayifyExpression(viewModel.previewResult)}",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    } else {
-                        Text(
-                            text = displayifyExpression(viewModel.input),
-                            style = MaterialTheme.typography.headlineLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Input + Preview Texts
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        if (viewModel.previewResult.isNotEmpty()) {
+                            Text(
+                                text = displayifyExpression(viewModel.input),
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "= ${displayifyExpression(viewModel.previewResult)}",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else {
+                            Text(
+                                text = displayifyExpression(viewModel.input),
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
