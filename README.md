@@ -78,13 +78,15 @@ com.metzger100.calculator
 │   ├── local                 # Room entities & DAOs
 │   │   ├── CalculationDao.kt
 │   │   ├── CalculationEntity.kt
-│   │   ├── CurrencyRateDao.kt
-│   │   ├── CurrencyRateEntity.kt
+│   │   ├── CalculatorDatabase.kt # contains CalculationEntity, CurrencyRateEntity, CurrencyListEntity and CurrencyPrefsEntity
 │   │   ├── CurrencyListDao.kt
 │   │   ├── CurrencyListEntity.kt
-│   │   └── CalculatorDatabase.kt
-│   ├── CurrencyRepository.kt # fetch & cache logic for exchange rates & list
-│   └── CalculatorRepository.kt
+│   │   ├── CurrencyPrefsDao.kt
+│   │   ├── CurrencyPrefsEntity.kt
+│   │   ├── CurrencyRateDao.kt
+│   │   └── CurrencyRateEntity.kt
+│   ├── CalculatorRepository.kt # saves history of calculator tab
+│   └── CurrencyRepository.kt # fetch & cache logic for exchange rates & list, saves prefs of currency tab
 │
 ├── di                        # Hilt modules & qualifiers
 │   ├── AppModule.kt          # provides Room, HttpClient, dispatchers
@@ -98,7 +100,7 @@ com.metzger100.calculator
 │   │   │   ├── CalculatorScreen.kt
 │   │   │   ├── StandardKeyboard.kt
 │   │   │   └── ScientificKeyboard.kt
-│   │   └──.viewmodel
+│   │   └── viewmodel
 │   │       └── CalculatorViewModel.kt
 │   └── currency               # Currency converter feature
 │       ├── ui
@@ -110,7 +112,13 @@ com.metzger100.calculator
 │
 ├── ui
 │   ├── navigation            # NavGraph, AppTopBar, BottomNavBar & NavItem classes
+|   |   ├── BottomNavBar.kt
+|   |   ├── NavGraph.kt
+|   |   ├── NavItem.kt
+│   │   └── TopAppBar
 │   └── theme                 # Material You theme setup
+│       ├── Theme.kt
+│       └── Type.kt
 │
 └── MainActivity.kt           # Entry point
 ```
