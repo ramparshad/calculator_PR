@@ -66,7 +66,7 @@ fun AppContent() {
             topBar = {
                 TopAppBar(
                     onClearHistory = CalcViewModel::clearHistory,
-                    onRefreshRates = { CurViewModel.loadBase(CurViewModel.base.value) }
+                    onRefreshRates = { CurViewModel.forceRefreshData(CurViewModel.base.value) }
                 )
             },
             bottomBar = {
