@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .clipToBounds()
             ) {
                 val context = LocalContext.current
 
@@ -59,6 +61,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 textColor,
                                 resultColor
                             )
+                            clipToPadding = true
+                            clipChildren = true
                         }
                     },
                     update = { rv ->
@@ -69,7 +73,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             rv.scrollToPosition(0)
                         }
                     },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().clipToBounds()
                 )
             }
 
