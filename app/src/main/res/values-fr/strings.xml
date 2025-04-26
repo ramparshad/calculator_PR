@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Calculatrice</string>
+	<string name="TopAppBar_Title">Calculatrice</string>
+	<string name="TopAppBar_Menu">Ouvrir</string>
+	<string name="TopAppBar_PurgeHistory">Supprimer l\'histoire</string>
+	<string name="TopAppBar_RefreshRates">Mettre à jour les taux de change</string>
+	<string name="NavItem_Calculator">Calculatrice</string>
+	<string name="NavItem_Currency">Devise</string>
+	<string name="NavItem_Units">Unités</string>
+	<string name="Calculator_Error">Erreur</string>
+	<string name="no_exchange_data">Aucune donnée de taux de change disponible. Veuillez aller en ligne ou redémarrer l\'application.</string>
+	<string name="exchange_rates_as_of">Taux de change à partir de:</string>
+	<string name="next_rates_update">MISE À JOUR SUIVANT:</string>
+	<string name="no_data_available">Aucun taux de change disponible</string>
+	<string name="update_due">Mise à jour due</string>
+</resources>

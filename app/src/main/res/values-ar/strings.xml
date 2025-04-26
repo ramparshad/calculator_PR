@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">آلة حاسبة</string>
+	<string name="TopAppBar_Title">آلة حاسبة</string>
+	<string name="TopAppBar_Menu">افتح القائمة</string>
+	<string name="TopAppBar_PurgeHistory">حذف التاريخ</string>
+	<string name="TopAppBar_RefreshRates">تحديث أسعار الصرف</string>
+	<string name="NavItem_Calculator">آلة حاسبة</string>
+	<string name="NavItem_Currency">عملة</string>
+	<string name="NavItem_Units">الوحدات</string>
+	<string name="Calculator_Error">خطأ</string>
+	<string name="no_exchange_data">لا توجد بيانات سعر الصرف المتاحة. يرجى الاتصال بالإنترنت أو إعادة تشغيل التطبيق.</string>
+	<string name="exchange_rates_as_of">أسعار الصرف اعتبارًا من:</string>
+	<string name="next_rates_update">التحديث التالي:</string>
+	<string name="no_data_available">لا توجد أسعار صرف متاحة</string>
+	<string name="update_due">تحديث مستحق</string>
+</resources>

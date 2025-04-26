@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Kalkulator</string>
+	<string name="TopAppBar_Title">Kalkulator</string>
+	<string name="TopAppBar_Menu">Buka menu</string>
+	<string name="TopAppBar_PurgeHistory">Hapus Sejarah</string>
+	<string name="TopAppBar_RefreshRates">Perbarui nilai tukar</string>
+	<string name="NavItem_Calculator">Kalkulator</string>
+	<string name="NavItem_Currency">Mata uang</string>
+	<string name="NavItem_Units">Unit</string>
+	<string name="Calculator_Error">Kesalahan</string>
+	<string name="no_exchange_data">Tidak ada data nilai tukar yang tersedia. Silakan online atau restart aplikasi.</string>
+	<string name="exchange_rates_as_of">Nilai tukar pada:</string>
+	<string name="next_rates_update">Pembaruan berikutnya:</string>
+	<string name="no_data_available">Tidak ada nilai tukar yang tersedia</string>
+	<string name="update_due">Perbarui karena</string>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Calculadora</string>
+	<string name="TopAppBar_Title">Calculadora</string>
+	<string name="TopAppBar_Menu">Menú abierto</string>
+	<string name="TopAppBar_PurgeHistory">Eliminar la historia</string>
+	<string name="TopAppBar_RefreshRates">Actualizar tipos de cambio</string>
+	<string name="NavItem_Calculator">Calculadora</string>
+	<string name="NavItem_Currency">Divisa</string>
+	<string name="NavItem_Units">Unidades</string>
+	<string name="Calculator_Error">Error</string>
+	<string name="no_exchange_data">No hay datos de tipo de cambio disponibles. Por favor vaya en línea o reinicie la aplicación.</string>
+	<string name="exchange_rates_as_of">Tipos de cambio a partir de:</string>
+	<string name="next_rates_update">Siguiente actualización:</string>
+	<string name="no_data_available">No hay tipos de cambio disponibles</string>
+	<string name="update_due">Actualización debido</string>
+</resources>

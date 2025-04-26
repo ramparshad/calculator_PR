@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Hesap makinesi</string>
+	<string name="TopAppBar_Title">Hesap makinesi</string>
+	<string name="TopAppBar_Menu">Açık Menü</string>
+	<string name="TopAppBar_PurgeHistory">Geçmişi Sil</string>
+	<string name="TopAppBar_RefreshRates">Değişim Kurullarını Güncelle</string>
+	<string name="NavItem_Calculator">Hesap makinesi</string>
+	<string name="NavItem_Currency">Para birimi</string>
+	<string name="NavItem_Units">Birimler</string>
+	<string name="Calculator_Error">Hata</string>
+	<string name="no_exchange_data">Döviz kuru verisi yok. Lütfen çevrimiçi olun veya uygulamayı yeniden başlatın.</string>
+	<string name="exchange_rates_as_of">Döviz kuru:</string>
+	<string name="next_rates_update">Sonraki Güncelleme:</string>
+	<string name="no_data_available">Döviz kuru yok</string>
+	<string name="update_due">Güncelleme</string>
+</resources>
