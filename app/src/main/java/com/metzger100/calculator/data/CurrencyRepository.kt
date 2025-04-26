@@ -100,7 +100,7 @@ class CurrencyRepository @Inject constructor(
 
     private suspend fun fetchRatesJson(base: String): String {
         val todayUtc = LocalDate.now(ZoneOffset.UTC)
-        val tries = listOf(todayUtc.plusDays(1), todayUtc)
+        val tries = listOf(todayUtc.plusDays(1), todayUtc, todayUtc.minusDays(1))
         val lower = base.lowercase()
 
         // Phase 1: jsDelivr für morgen und heute
@@ -152,7 +152,7 @@ class CurrencyRepository @Inject constructor(
     suspend fun getAvailableCurrenciesWithTitles(forceRefresh: Boolean = false): List<Pair<String, String>> =
         withContext(ioDispatcher) {
             val now = System.currentTimeMillis()
-            val cutoff = now - 12 * 3_600_000L  // 12 Stunden
+            val cutoff = now - 12 * 3_600_000L
             val cached = listDao.get()
 
             val shouldRefresh = forceRefresh || cached == null || cached.timestamp <= cutoff
@@ -193,7 +193,7 @@ class CurrencyRepository @Inject constructor(
     /** Holt currencies.min.json zuerst vom CDN, bei Fehlern vom Pages-dev-Fallback. */
     private suspend fun fetchCurrenciesJsonWithNetworkFallback(): String {
         val todayUtc = LocalDate.now(ZoneOffset.UTC)
-        val tries = listOf(todayUtc.plusDays(1), todayUtc)
+        val tries = listOf(todayUtc.plusDays(1), todayUtc, todayUtc.minusDays(1))
 
         // Phase 1: jsDelivr
         for (date in tries) {
