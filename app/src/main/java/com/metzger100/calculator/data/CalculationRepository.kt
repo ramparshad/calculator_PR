@@ -3,7 +3,7 @@ package com.metzger100.calculator.data
 import com.metzger100.calculator.data.local.CalculationDao
 import com.metzger100.calculator.data.local.CalculationEntity
 
-class CalculatorRepository(private val calcdao: CalculationDao) {
+class CalculationRepository(private val calcdao: CalculationDao) {
 
     suspend fun insert(input: String, result: String) {
         // Füge den neuen Eintrag hinzu

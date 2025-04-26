@@ -2,7 +2,7 @@ package com.metzger100.calculator.di
 
 import android.app.Application
 import androidx.room.Room
-import com.metzger100.calculator.data.CalculatorRepository
+import com.metzger100.calculator.data.CalculationRepository
 import com.metzger100.calculator.data.local.CalculatorDatabase
 import com.metzger100.calculator.data.local.CalculationDao
 import com.metzger100.calculator.data.local.CurrencyListDao
@@ -41,8 +41,8 @@ object AppModule {
     }
 
     @Provides
-    fun provideRepository(dao: CalculationDao): CalculatorRepository {
-        return CalculatorRepository(dao)
+    fun provideRepository(dao: CalculationDao): CalculationRepository {
+        return CalculationRepository(dao)
     }
 
     @Provides

@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.ezylang.evalex.bigmath.BigMathExpression
 import com.metzger100.calculator.R
-import com.metzger100.calculator.data.CalculatorRepository
+import com.metzger100.calculator.data.CalculationRepository
 import com.metzger100.calculator.data.local.CalculationEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -17,7 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
-    private val repository: CalculatorRepository,
+    private val repository: CalculationRepository,
     private val application: Application
 ) : ViewModel() {
 
