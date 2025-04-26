@@ -12,6 +12,7 @@ import com.metzger100.calculator.data.local.CurrencyPrefsEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.util.Locale
 
 @HiltViewModel
@@ -38,6 +39,9 @@ class CurrencyViewModel @Inject constructor(
     private val _lastUpdated = mutableStateOf<Long?>(null)
     val lastUpdated: State<Long?> = _lastUpdated
 
+    private val _lastApiDate = mutableStateOf<LocalDate?>(null)
+    val lastApiDate: State<LocalDate?> = _lastApiDate
+
     init {
         viewModelScope.launch {
             // load persisted prefs if any
@@ -53,6 +57,7 @@ class CurrencyViewModel @Inject constructor(
             // Lade Kurse für die Standard-Base
             _rates.value = repo.getRates(_base.value)
             _lastUpdated.value = repo.getLastTimestampForBase(_base.value)
+            _lastApiDate.value = repo.getLastApiDateForBase(_base.value)
         }
     }
 
@@ -110,6 +115,7 @@ class CurrencyViewModel @Inject constructor(
             _currenciesWithTitles.value = repo.getAvailableCurrenciesWithTitles(forceRefresh = true)
             _rates.value = repo.getRates(newBase, forceRefresh = true)
             _lastUpdated.value = repo.getLastTimestampForBase(newBase)
+            _lastApiDate.value = repo.getLastApiDateForBase(_base.value)
         }
     }
 

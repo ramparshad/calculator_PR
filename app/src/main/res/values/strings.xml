@@ -9,7 +9,8 @@
     <string name="NavItem_Currency">Currency</string>
     <string name="NavItem_Units">Units</string>
     <string name="Calculator_Error">Error</string>
-    <string name="next_rates_update_in">Next exchange rates update in</string>
+    <string name="next_rates_update_in">Exchange rates refresh in</string>
     <string name="next_rates_update_in_end">hours</string>
     <string name="TopAppBar_RefreshRates">Refresh exchanges rates now</string>
+    <string name="last_pull_label">Last checked online:</string>
 </resources>

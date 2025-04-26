@@ -24,6 +24,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.Constants.MajorCurrencyCodes
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Date
 import java.util.Locale
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -33,6 +37,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
     val currenciesWithTitles by viewModel.currenciesWithTitles
     val rates by viewModel.rates
     val lastUpdated by viewModel.lastUpdated
+    val lastApiDate by viewModel.lastApiDate
 
     // nur wichtige Währungen filtern
     val filtered by remember(currenciesWithTitles) {
@@ -98,37 +103,13 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
             )
         }
 
-        lastUpdated?.let { timestamp ->
-            val formattedTime = remember(timestamp) {
-                java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
-                    .format(java.util.Date(timestamp))
-            }
-
-            val hoursUntilNextUpdate = remember(timestamp) {
-                val nextUpdateMillis = timestamp + 12 * 60 * 60 * 1000  // 12 hours
-                val now = System.currentTimeMillis()
-                val diffMillis = nextUpdateMillis - now
-                (diffMillis / (1000 * 60 * 60)).coerceAtLeast(0)
-            }
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = keyboardHeight + 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(id = R.string.exchange_rates_as_of) + " " + formattedTime,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-                Text(
-                    text = stringResource(id = R.string.next_rates_update_in) + " " + hoursUntilNextUpdate + " " + stringResource(id = R.string.next_rates_update_in_end),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-            }
-        }
+        ExchangeRateInfo(
+            lastApiDate            = lastApiDate,
+            lastUpdatedTimestamp   = lastUpdated,
+            modifier               = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = keyboardHeight + 8.dp)
+        )
 
         // Tastatur
         Box(
@@ -147,6 +128,57 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
                     val currentValue = if (viewModel.selectedField == 1) viewModel.value1 else viewModel.value2
                     if (currentValue.isNotEmpty()) viewModel.onValueChange(currentValue.dropLast(1))
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun ExchangeRateInfo(
+    lastApiDate: LocalDate?,
+    lastUpdatedTimestamp: Long?,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .padding(bottom = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // 1) API-Datum
+        lastApiDate?.let { apiDate ->
+            Text(
+                text = stringResource(id = R.string.exchange_rates_as_of) + " " +
+                        apiDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
+
+        // 2) letzter Pull + Stunden bis zum nächsten Pull
+        lastUpdatedTimestamp?.let { timestamp ->
+            // formatiertes Pull-Datum + Uhrzeit
+            val pullTime = remember(timestamp) {
+                SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+                    .format(Date(timestamp))
+            }
+            // Stunden bis zum nächsten Pull (alle 12 h)
+            val hoursUntilNext = remember(timestamp) {
+                val next = timestamp + 12 * 60 * 60 * 1000L
+                ((next - System.currentTimeMillis()) / (1000 * 60 * 60)).coerceAtLeast(0)
+            }
+
+            Text(
+                text = stringResource(id = R.string.last_pull_label) + " " + pullTime,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+
+            Text(
+                text = stringResource(id = R.string.next_rates_update_in) + " " +
+                        hoursUntilNext + " " +
+                        stringResource(id = R.string.next_rates_update_in_end),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
     }

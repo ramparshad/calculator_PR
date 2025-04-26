@@ -79,6 +79,21 @@ class CurrencyRepository @Inject constructor(
         }
     }
 
+    suspend fun getLastApiDateForBase(base: String): LocalDate? = withContext(ioDispatcher) {
+        rateDao.get(base)?.json
+            ?.let { json ->
+                try {
+                    val root = gson.fromJson(json, JsonObject::class.java)
+                    if (root.has("date")) {
+                        LocalDate.parse(root.get("date").asString)
+                    } else null
+                } catch (e: Exception) {
+                    Log.e(TAG, "getLastApiDateForBase: JSON parsing failed: ${e.localizedMessage}")
+                    null
+                }
+            }
+    }
+
     suspend fun getLastTimestampForBase(base: String): Long? {
         return rateDao.get(base)?.timestamp
     }
