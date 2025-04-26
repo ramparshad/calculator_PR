@@ -99,11 +99,22 @@ class CurrencyViewModel @Inject constructor(
 
     private fun recalc() {
         if (selectedField == 1) {
-            value2 = convert(value1, currency1, currency2)
+            // Wenn das erste Feld leer ist, auch das zweite leeren
+            if (value1.isBlank()) {
+                value2 = ""
+            } else {
+                value2 = convert(value1, currency1, currency2)
+            }
         } else {
-            value1 = convert(value2, currency2, currency1)
+            // Wenn das zweite Feld leer ist, auch das erste leeren
+            if (value2.isBlank()) {
+                value1 = ""
+            } else {
+                value1 = convert(value2, currency2, currency1)
+            }
         }
     }
+
 
     fun refreshData() {
         viewModelScope.launch {
