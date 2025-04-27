@@ -26,7 +26,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
-import com.metzger100.calculator.features.currency.ui.Constants.MajorCurrencyCodes
+import com.metzger100.calculator.features.currency.ui.CurrencyConverterConstants.MajorCurrencyCodes
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -282,60 +282,69 @@ fun CurrencySelectorDialogRV(
     onDismissRequest: () -> Unit
 ) {
     val textColor = MaterialTheme.colorScheme.onSurface
+    val dialogHeight = remember { mutableStateOf(0.dp) }
+
     Dialog(onDismissRequest = onDismissRequest) {
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            tonalElevation = 8.dp,
-            modifier = Modifier
-                .fillMaxWidth(0.90f)
-                .fillMaxHeight(0.75f)
-        ) {
-            AndroidView(
-                factory = {
-                    RecyclerView(it).apply {
-                        layoutManager = LinearLayoutManager(it)
-                        adapter = object : RecyclerView.Adapter<CurrencyViewHolder>() {
-                            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CurrencyViewHolder {
-                                val linearLayout = LinearLayout(it).apply {
-                                    orientation = LinearLayout.HORIZONTAL
-                                    layoutParams = ViewGroup.LayoutParams(
-                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                        ViewGroup.LayoutParams.WRAP_CONTENT
-                                    )
+        BoxWithConstraints {
+            val maxDialogHeight = maxHeight * 0.75f
+            if (dialogHeight.value == 0.dp) {
+                dialogHeight.value = maxDialogHeight
+            }
+
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                tonalElevation = 8.dp,
+                modifier = Modifier
+                    .fillMaxWidth(0.90f)
+                    .height(dialogHeight.value)
+            ) {
+                AndroidView(
+                    modifier = Modifier.fillMaxWidth(),
+                    factory = { context ->
+                        RecyclerView(context).apply {
+                            layoutManager = LinearLayoutManager(context)
+                            adapter = object : RecyclerView.Adapter<CurrencyViewHolder>() {
+                                override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CurrencyViewHolder {
+                                    val linearLayout = LinearLayout(context).apply {
+                                        orientation = LinearLayout.HORIZONTAL
+                                        layoutParams = ViewGroup.LayoutParams(
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                            ViewGroup.LayoutParams.WRAP_CONTENT
+                                        )
+                                    }
+
+                                    val textView = TextView(context).apply {
+                                        setPadding(32, 24, 32, 24)
+                                        textSize = 16f
+                                        setTextColor(textColor.toArgb())
+                                        layoutParams = ViewGroup.LayoutParams(
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                            ViewGroup.LayoutParams.WRAP_CONTENT
+                                        )
+                                    }
+
+                                    linearLayout.addView(textView)
+
+                                    return CurrencyViewHolder(linearLayout)
                                 }
 
-                                val textView = TextView(it).apply {
-                                    setPadding(32, 24, 32, 24)
-                                    textSize = 16f
-                                    setTextColor(textColor.toArgb())
-                                    layoutParams = ViewGroup.LayoutParams(
-                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                        ViewGroup.LayoutParams.WRAP_CONTENT
-                                    )
-                                }
+                                override fun getItemCount() = currencies.size
 
-                                linearLayout.addView(textView)
+                                override fun onBindViewHolder(holder: CurrencyViewHolder, position: Int) {
+                                    val (code, title) = currencies[position]
+                                    val linearLayout = holder.itemView as LinearLayout
+                                    val textView = linearLayout.getChildAt(0) as TextView
+                                    textView.text = title
 
-                                return CurrencyViewHolder(linearLayout)
-                            }
-
-                            override fun getItemCount() = currencies.size
-
-                            override fun onBindViewHolder(holder: CurrencyViewHolder, position: Int) {
-                                val (code, title) = currencies[position]
-                                val linearLayout = holder.itemView as LinearLayout
-                                val textView = linearLayout.getChildAt(0) as TextView
-                                textView.text = title
-
-                                holder.itemView.setOnClickListener {
-                                    onCurrencySelected(code)
+                                    holder.itemView.setOnClickListener {
+                                        onCurrencySelected(code)
+                                    }
                                 }
                             }
                         }
                     }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
+                )
+            }
         }
     }
 }

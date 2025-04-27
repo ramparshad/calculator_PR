@@ -18,4 +18,3 @@ sealed class NavItem(
     object Currency   : NavItem("currency",   Icons.Filled.CurrencyExchange, R.string.NavItem_Currency)
     object Units      : NavItem("units",      Icons.Filled.Straighten, R.string.NavItem_Units)
 }
-

@@ -1,14 +1,14 @@
-package com.metzger100.calculator.data
+package com.metzger100.calculator.data.repository
 
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.metzger100.calculator.data.local.CurrencyListDao
-import com.metzger100.calculator.data.local.CurrencyListEntity
-import com.metzger100.calculator.data.local.CurrencyPrefsDao
-import com.metzger100.calculator.data.local.CurrencyPrefsEntity
-import com.metzger100.calculator.data.local.CurrencyRateDao
-import com.metzger100.calculator.data.local.CurrencyRateEntity
+import com.metzger100.calculator.data.local.dao.CurrencyListDao
+import com.metzger100.calculator.data.local.entity.CurrencyListEntity
+import com.metzger100.calculator.data.local.dao.CurrencyPrefsDao
+import com.metzger100.calculator.data.local.entity.CurrencyPrefsEntity
+import com.metzger100.calculator.data.local.dao.CurrencyRateDao
+import com.metzger100.calculator.data.local.entity.CurrencyRateEntity
 import com.metzger100.calculator.di.IoDispatcher
 import io.ktor.client.*
 import io.ktor.client.request.*

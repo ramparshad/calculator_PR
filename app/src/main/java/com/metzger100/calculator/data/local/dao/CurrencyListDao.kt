@@ -1,10 +1,11 @@
 // com/metzger100/calculator/data/local/CurrencyListDao.kt
-package com.metzger100.calculator.data.local
+package com.metzger100.calculator.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.metzger100.calculator.data.local.entity.CurrencyListEntity
 
 @Dao
 interface CurrencyListDao {

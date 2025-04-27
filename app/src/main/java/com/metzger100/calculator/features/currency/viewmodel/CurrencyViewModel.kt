@@ -7,8 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.metzger100.calculator.data.CurrencyRepository
-import com.metzger100.calculator.data.local.CurrencyPrefsEntity
+import com.metzger100.calculator.data.repository.CurrencyRepository
+import com.metzger100.calculator.data.local.entity.CurrencyPrefsEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.launch

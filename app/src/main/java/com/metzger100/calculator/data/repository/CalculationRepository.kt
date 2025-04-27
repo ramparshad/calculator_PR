@@ -1,7 +1,7 @@
-package com.metzger100.calculator.data
+package com.metzger100.calculator.data.repository
 
-import com.metzger100.calculator.data.local.CalculationDao
-import com.metzger100.calculator.data.local.CalculationEntity
+import com.metzger100.calculator.data.local.dao.CalculationDao
+import com.metzger100.calculator.data.local.entity.CalculationEntity
 
 class CalculationRepository(private val calcdao: CalculationDao) {
 

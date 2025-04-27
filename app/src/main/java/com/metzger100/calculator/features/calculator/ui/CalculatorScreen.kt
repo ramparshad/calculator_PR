@@ -22,6 +22,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.metzger100.calculator.data.local.entity.CalculationEntity
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewModel
 
@@ -209,9 +210,9 @@ private class CalculationAdapter(
     private val resultColor: Int
 ) : RecyclerView.Adapter<CalculationViewHolder>() {
 
-    private var items: List<com.metzger100.calculator.data.local.CalculationEntity> = emptyList()
+    private var items: List<CalculationEntity> = emptyList()
 
-    fun updateData(newItems: List<com.metzger100.calculator.data.local.CalculationEntity>) {
+    fun updateData(newItems: List<CalculationEntity>) {
         val diffCallback = CalculationDiffCallback(items, newItems)
         val diffResult = DiffUtil.calculateDiff(diffCallback)
         items = newItems
@@ -251,8 +252,8 @@ private class CalculationAdapter(
 }
 
 class CalculationDiffCallback(
-    private val oldList: List<com.metzger100.calculator.data.local.CalculationEntity>,
-    private val newList: List<com.metzger100.calculator.data.local.CalculationEntity>
+    private val oldList: List<CalculationEntity>,
+    private val newList: List<CalculationEntity>
 ) : DiffUtil.Callback() {
     override fun getOldListSize(): Int = oldList.size
     override fun getNewListSize(): Int = newList.size

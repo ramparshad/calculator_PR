@@ -1,7 +1,7 @@
 // com.metzger100.calculator.features.currency.ui.Constants.kt
 package com.metzger100.calculator.features.currency.ui
 
-object Constants {
+object CurrencyConverterConstants {
     // Nur diese Währungen wollen wir im Dropdown zeigen:
     val MajorCurrencyCodes = listOf(
         "AUD","BGN","BRL","CAD","CHF","CNY","CZK","DKK",

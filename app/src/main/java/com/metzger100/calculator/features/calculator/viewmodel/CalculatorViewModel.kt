@@ -7,8 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.ezylang.evalex.bigmath.BigMathExpression
 import com.metzger100.calculator.R
-import com.metzger100.calculator.data.CalculationRepository
-import com.metzger100.calculator.data.local.CalculationEntity
+import com.metzger100.calculator.data.repository.CalculationRepository
+import com.metzger100.calculator.data.local.entity.CalculationEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal

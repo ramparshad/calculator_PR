@@ -12,6 +12,9 @@ An elegant, Android-native calculator and currency converter app, built with **J
 - 💱 **Currency Converter**  
   Converts between currencies using real-time exchange rates (data fetched from a free public API).
 
+- 🧳 **Unit Converter Tab**  
+  Convert between various units such as length, weight, temperature, and more with optimized keypads and a clear interface.
+
 - 🎨 **Material You Support**  
   Adapts to your system’s dynamic color palette (Monet), including light/dark themes and accent coloring.
 
@@ -31,8 +34,14 @@ An elegant, Android-native calculator and currency converter app, built with **J
 
 ## 🚧 To-Do
 
-- 🔧 **Unit Converter Tab**  
-  Add support for converting between units (length, weight, temperature, etc.).
+- 🔧 **Unit Converter Features**  
+  Finalize and polish the Unit Converter tab, including support for more units (e.g., temperature, weight, distance, etc.).
+
+- ✅ **Verification**  
+  Ensure functionality of all features, particularly the accuracy of conversions (especially unit conversion constants).
+
+- ⚙️ **Smaller Optimizations**  
+  Focus on UX improvements, performance optimizations, and expanding the scope (e.g., missing units, unit categories).
 
 ---
 
@@ -74,45 +83,66 @@ Open the project in Android Studio, let Gradle sync, then click **Run**.
 
 ```
 com.metzger100.calculator
-├── data
-│   ├── local                 # Room entities & DAOs
-│   │   ├── CalculationDao.kt
-│   │   ├── CalculationEntity.kt
-│   │   ├── CurrencyRateDao.kt
-│   │   ├── CurrencyRateEntity.kt
-│   │   ├── CurrencyListDao.kt
-│   │   ├── CurrencyListEntity.kt
-│   │   └── CalculatorDatabase.kt
-│   ├── CurrencyRepository.kt # fetch & cache logic for exchange rates & list
-│   └── CalculatorRepository.kt
+├── data                        # Data and Repository layer
+│   ├── local                   # Room entities & DAOs
+│   │   ├── dao                 # Contains all DAOs
+│   │   │   ├── CalculationDao.kt
+│   │   │   ├── CurrencyListDao.kt
+│   │   │   ├── CurrencyPrefsDao.kt
+│   │   │   └── CurrencyRateDao.kt
+│   │   ├── entity              # Room entities
+│   │   │   ├── CalculationEntity.kt
+│   │   │   ├── CurrencyListEntity.kt
+│   │   │   ├── CurrencyPrefsEntity.kt
+│   │   │   └── CurrencyRateEntity.kt
+│   │   └── database            # Room database & DAO interfaces
+│   │       └── CalculatorDatabase.kt
+│   └── repository              # Repository classes handling data sources
+│       ├── CalculatorRepository.kt
+│       └── CurrencyRepository.kt
 │
-├── di                        # Hilt modules & qualifiers
-│   ├── AppModule.kt          # provides Room, HttpClient, dispatchers
-│   └── Qualifiers.kt
+├── di                          # Dependency Injection (Hilt) - Modules & Qualifiers
+│   ├── modules                 # DI modules
+│   │   └── AppModule.kt        # Provides Room, HttpClient, Dispatchers
+│   └── Qualifiers.kt           # Custom qualifiers for Hilt DI (if needed)
 │
-├── features
-│   ├── calculator             # Calculator feature
-|   |   ├── model
-|   |   │   └── CalculatorMode.kt
-│   │   ├── ui
+├── features                    # Features for different functionalities
+│   ├── calculator              # Calculator feature
+│   │   ├── model               # Model data (e.g. calculator modes)
+│   │   │   └── CalculatorMode.kt
+│   │   ├── ui                  # UI components and Composables for the Calculator
 │   │   │   ├── CalculatorScreen.kt
 │   │   │   ├── StandardKeyboard.kt
 │   │   │   └── ScientificKeyboard.kt
-│   │   └──.viewmodel
+│   │   └── viewmodel           # ViewModel for the Calculator feature
 │   │       └── CalculatorViewModel.kt
-│   └── currency               # Currency converter feature
-│       ├── ui
-|       |   ├── Constants.kt
-│       │   ├── CurrencyConverterScreen.kt
-│       │   └── CurrencyConverterKeyboard.kt
-│       └── viewmodel
-│           └── CurrencyViewModel.kt
+│   ├── currency                # Currency Converter feature
+│   │   ├── ui                  # UI components for the Currency Converter
+│   │   │   ├── CurrencyConverterScreen.kt
+│   │   │   ├── CurrencyConverterKeyboard.kt
+│   │   │   └── CurrencyConverterConstants.kt    # Constants for Available Currencies in Converter UI
+│   │   └── viewmodel           # ViewModel for the Currency Converter
+│   │       └── CurrencyViewModel.kt
+│   └── unit                    # Unit Converter feature
+│       ├── ui                  # UI components for Unit Converter
+│       │   ├── UnitConverterOverviewScreen.kt
+│       │   ├── UnitConverterScreen.kt
+│       │   ├── UnitConverterKeyboard.kt
+│       │   └── UnitConverterConstants.kt  # Constants for Unit Converter UI
+│       └── viewmodel           # ViewModel for the Unit Converter feature
+│           └── UnitConverterViewModel.kt
 │
-├── ui
-│   ├── navigation            # NavGraph, AppTopBar, BottomNavBar & NavItem classes
-│   └── theme                 # Material You theme setup
+├── ui                          # UI components and Navigation setup
+│   ├── navigation              # Navigation (NavGraph, BottomNavBar, etc.)
+│   │   ├── BottomNavBar.kt     # Bottom Navigation Bar
+│   │   ├── NavGraph.kt         # Navigation graph for the app
+│   │   ├── NavItem.kt          # Items for Bottom Navigation
+│   │   └── TopAppBar.kt        # Top AppBar for screens
+│   └── theme                   # Material You Theme (colors, typography, etc.)
+│       ├── Theme.kt            # Application-wide theme
+│       └── Type.kt             # Font definitions and typography setup
 │
-└── MainActivity.kt           # Entry point
+└── MainActivity.kt             # Entry point of the app (MainActivity)
 ```
 
 ---

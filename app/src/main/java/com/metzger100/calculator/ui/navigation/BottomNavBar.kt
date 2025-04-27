@@ -15,8 +15,16 @@ fun BottomNavBar(navController: NavController) {
     NavigationBar {
         items.forEach { item ->
             val labelText = stringResource(id = item.labelRes)
+
+            // Wenn die Route "units" enthält, markiere den Tab als selektiert
+            val isSelected = when {
+                currentRoute == item.route -> true
+                item == NavItem.Units && currentRoute?.startsWith("unit/") == true -> true
+                else -> false
+            }
+
             NavigationBarItem(
-                selected = currentRoute == item.route,
+                selected = isSelected,
                 onClick = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
@@ -32,4 +40,3 @@ fun BottomNavBar(navController: NavController) {
         }
     }
 }
-

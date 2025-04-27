@@ -1,9 +1,17 @@
-package com.metzger100.calculator.data.local
+package com.metzger100.calculator.data.local.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.metzger100.calculator.data.local.dao.CalculationDao
+import com.metzger100.calculator.data.local.dao.CurrencyListDao
+import com.metzger100.calculator.data.local.dao.CurrencyPrefsDao
+import com.metzger100.calculator.data.local.dao.CurrencyRateDao
+import com.metzger100.calculator.data.local.entity.CalculationEntity
+import com.metzger100.calculator.data.local.entity.CurrencyListEntity
+import com.metzger100.calculator.data.local.entity.CurrencyPrefsEntity
+import com.metzger100.calculator.data.local.entity.CurrencyRateEntity
 
 @Database(
     entities = [

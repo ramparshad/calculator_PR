@@ -1,14 +1,15 @@
-package com.metzger100.calculator.di
+package com.metzger100.calculator.di.module
 
 import android.app.Application
 import androidx.room.Room
-import com.metzger100.calculator.data.CalculationRepository
-import com.metzger100.calculator.data.local.CalculatorDatabase
-import com.metzger100.calculator.data.local.CalculationDao
-import com.metzger100.calculator.data.local.CurrencyListDao
-import com.metzger100.calculator.data.local.CurrencyPrefsDao
-import com.metzger100.calculator.data.local.CurrencyRateDao
-import com.metzger100.calculator.data.local.MIGRATION_1_2
+import com.metzger100.calculator.data.repository.CalculationRepository
+import com.metzger100.calculator.data.local.database.CalculatorDatabase
+import com.metzger100.calculator.data.local.dao.CalculationDao
+import com.metzger100.calculator.data.local.dao.CurrencyListDao
+import com.metzger100.calculator.data.local.dao.CurrencyPrefsDao
+import com.metzger100.calculator.data.local.dao.CurrencyRateDao
+import com.metzger100.calculator.data.local.database.MIGRATION_1_2
+import com.metzger100.calculator.di.IoDispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

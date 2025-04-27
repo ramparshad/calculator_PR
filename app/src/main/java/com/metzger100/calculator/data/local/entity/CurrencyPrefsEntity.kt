@@ -1,5 +1,5 @@
 // com/metzger100/calculator/data/local/CurrencyPrefsEntity.kt
-package com.metzger100.calculator.data.local
+package com.metzger100.calculator.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
