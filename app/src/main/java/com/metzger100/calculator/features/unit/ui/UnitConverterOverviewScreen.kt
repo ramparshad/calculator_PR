@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.LocalDrink
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Straighten
@@ -66,7 +67,8 @@ fun UnitConverterOverviewScreen(
         UnitCategory("Frequency", stringResource(R.string.UnitConvCat_Frequency), Icons.Default.Tune),
         UnitCategory("Data", stringResource(R.string.UnitConvCat_Data), Icons.Default.Storage),
         UnitCategory("FuelEconomy", stringResource(R.string.UnitConvCat_FuelEconomy), Icons.Default.LocalGasStation),
-        UnitCategory("PlaneAngle", stringResource(R.string.UnitConvCat_PlaneAngle), Icons.AutoMirrored.Filled.Undo)
+        UnitCategory("PlaneAngle", stringResource(R.string.UnitConvCat_PlaneAngle), Icons.AutoMirrored.Filled.Undo),
+        UnitCategory("Amount", stringResource(R.string.UnitConvCat_Amount), Icons.Default.Science)
     )
 
     LazyVerticalGrid(

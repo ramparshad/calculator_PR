@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="app_name">Rechner</string>
 	<string name="TopAppBar_Title">Rechner</string>
@@ -9,16 +8,17 @@
 	<string name="NavItem_Currency">Währung</string>
 	<string name="NavItem_Units">Einheiten</string>
 	<string name="Calculator_Error">Fehler</string>
-	<string name="no_exchange_data">Keine Wechselkursdaten verfügbar. Bitte gehen Sie online oder starten Sie die App neu.</string>
+	<string name="no_exchange_data">Keine Wechselkursdaten verfügbar. Bitte online gehen oder die App neu starten.</string>
 	<string name="exchange_rates_as_of">Wechselkurse vom:</string>
 	<string name="next_rates_update">Nächstes Update:</string>
 	<string name="no_data_available">Keine Wechselkurse verfügbar</string>
 	<string name="update_due">Update fällig</string>
 	<string name="Back">Zurück</string>
+
 	<string name="UnitConvCat_Length">Länge</string>
 	<string name="UnitConvCat_Weight">Gewicht</string>
 	<string name="UnitConvCat_Volume">Volumen</string>
-	<string name="UnitConvCat_Area">Bereich</string>
+	<string name="UnitConvCat_Area">Fläche</string>
 	<string name="UnitConvCat_Temperature">Temperatur</string>
 	<string name="UnitConvCat_Time">Zeit</string>
 	<string name="UnitConvCat_Speed">Geschwindig-\nkeit</string>
@@ -29,6 +29,9 @@
 	<string name="UnitConvCat_Data">Daten</string>
 	<string name="UnitConvCat_FuelEconomy">Kraftstoff-\nverbrauch</string>
 	<string name="UnitConvCat_PlaneAngle">Winkel</string>
+	<string name="UnitConvCat_Amount">Stoffmenge</string>
+
+	<!-- Length -->
 	<string name="UnitConvCatLength_Meter">Meter</string>
 	<string name="UnitConvCatLength_Kilometer">Kilometer</string>
 	<string name="UnitConvCatLength_Centimeter">Zentimeter</string>
@@ -37,50 +40,163 @@
 	<string name="UnitConvCatLength_Yard">Yard</string>
 	<string name="UnitConvCatLength_Foot">Fuß</string>
 	<string name="UnitConvCatLength_Inch">Zoll</string>
+	<string name="UnitConvCatLength_NauticalMile">Seemeile</string>
+	<string name="UnitConvCatLength_LightYear">Lichtjahr</string>
+	<string name="UnitConvCatLength_Parsec">Parsec</string>
+	<string name="UnitConvCatLength_Nanometer">Nanometer</string>
+	<string name="UnitConvCatLength_Micrometer">Mikrometer</string>
+	<string name="UnitConvCatLength_Angstrom">Ångström</string>
+	<string name="UnitConvCatLength_AstronomicalUnit">Astronomische Einheit</string>
+	<string name="UnitConvCatLength_KilometerPerSecond">Kilometer pro Sekunde</string>
+
+	<!-- Weight -->
 	<string name="UnitConvCatWeight_Kilogram">Kilogramm</string>
 	<string name="UnitConvCatWeight_Gram">Gramm</string>
 	<string name="UnitConvCatWeight_Milligram">Milligramm</string>
 	<string name="UnitConvCatWeight_Pound">Pfund</string>
 	<string name="UnitConvCatWeight_Ounce">Unze</string>
+	<string name="UnitConvCatWeight_Tonne">Tonne</string>
+	<string name="UnitConvCatWeight_Stone">Stone</string>
+	<string name="UnitConvCatWeight_US_Ton">US-Tonne</string>
+	<string name="UnitConvCatWeight_Carat">Karat</string>
+	<string name="UnitConvCatWeight_ShortHundredweight">Zentner (kurz)</string>
+	<string name="UnitConvCatWeight_LongHundredweight">Zentner (lang)</string>
+	<string name="UnitConvCatWeight_LongTon">Britische Tonne</string>
+
+	<!-- Volume -->
 	<string name="UnitConvCatVolume_Liter">Liter</string>
 	<string name="UnitConvCatVolume_Milliliter">Milliliter</string>
 	<string name="UnitConvCatVolume_CubicMeter">Kubikmeter</string>
-	<string name="UnitConvCatVolume_GallonUS">Gallone (USA)</string>
-	<string name="UnitConvCatVolume_PintUS">Pint (USA)</string>
+	<string name="UnitConvCatVolume_GallonUS">Gallone (US)</string>
+	<string name="UnitConvCatVolume_PintUS">Pint (US)</string>
+	<string name="UnitConvCatVolume_FluidOunceUS">Flüssigunze (US)</string>
+	<string name="UnitConvCatVolume_CupUS">Tasse (US)</string>
+	<string name="UnitConvCatVolume_GallonUK">Gallone (UK)</string>
+	<string name="UnitConvCatVolume_TeaspoonUS">Teelöffel (US)</string>
+	<string name="UnitConvCatVolume_TablespoonUS">Esslöffel (US)</string>
+	<string name="UnitConvCatVolume_QuartUS">Quart (US)</string>
+	<string name="UnitConvCatVolume_QuartUK">Quart (UK)</string>
+	<string name="UnitConvCatVolume_PintUK">Pint (UK)</string>
+	<string name="UnitConvCatVolume_FluidOunceUK">Flüssigunze (UK)</string>
+	<string name="UnitConvCatVolume_TeaspoonUK">Teelöffel (UK)</string>
+	<string name="UnitConvCatVolume_TablespoonUK">Esslöffel (UK)</string>
+
+	<!-- Area -->
 	<string name="UnitConvCatArea_SquareMeter">Quadratmeter</string>
 	<string name="UnitConvCatArea_SquareKilometer">Quadratkilometer</string>
 	<string name="UnitConvCatArea_SquareCentimeter">Quadratzentimeter</string>
 	<string name="UnitConvCatArea_Hectare">Hektar</string>
-	<string name="UnitConvCatArea_Acre">Morgen</string>
+	<string name="UnitConvCatArea_Acre">Acre</string>
+	<string name="UnitConvCatArea_SquareFoot">Quadratfuß</string>
+	<string name="UnitConvCatArea_SquareMile">Quadratmeile</string>
+	<string name="UnitConvCatArea_SquareMillimeter">Quadratmillimeter</string>
+	<string name="UnitConvCatArea_SquareInch">Quadratzoll</string>
+	<string name="UnitConvCatArea_SquareYard">Quadratyard</string>
+
+	<!-- Temperature -->
 	<string name="UnitConvCatTemperature_Celsius">Celsius</string>
 	<string name="UnitConvCatTemperature_Fahrenheit">Fahrenheit</string>
 	<string name="UnitConvCatTemperature_Kelvin">Kelvin</string>
+	<string name="UnitConvCatTemperature_Rankine">Rankine</string>
+
+	<!-- Time -->
 	<string name="UnitConvCatTime_Second">Sekunde</string>
 	<string name="UnitConvCatTime_Minute">Minute</string>
 	<string name="UnitConvCatTime_Hour">Stunde</string>
 	<string name="UnitConvCatTime_Day">Tag</string>
-	<string name="UnitConvCatSpeed_MeterPerSecond">Meter/Sekunde</string>
-	<string name="UnitConvCatSpeed_KilometerPerHour">Kilometer/Stunde</string>
-	<string name="UnitConvCatSpeed_MilePerHour">Meile/Stunde</string>
+	<string name="UnitConvCatTime_Week">Woche</string>
+	<string name="UnitConvCatTime_Millisecond">Millisekunde</string>
+	<string name="UnitConvCatTime_Microsecond">Mikrosekunde</string>
+	<string name="UnitConvCatTime_Nanosecond">Nanosekunde</string>
+	<string name="UnitConvCatTime_Month">Monat</string>
+	<string name="UnitConvCatTime_Year">Jahr</string>
+
+	<!-- Speed -->
+	<string name="UnitConvCatSpeed_MeterPerSecond">Meter pro Sekunde</string>
+	<string name="UnitConvCatSpeed_KilometerPerHour">Kilometer pro Stunde</string>
+	<string name="UnitConvCatSpeed_MilePerHour">Meile pro Stunde</string>
+	<string name="UnitConvCatSpeed_Knot">Knoten</string>
+	<string name="UnitConvCatSpeed_Mach">Mach</string>
+	<string name="UnitConvCatSpeed_FootPerSecond">Fuß pro Sekunde</string>
+	<string name="UnitConvCatSpeed_KilometerPerSecond">Kilometer pro Sekunde</string>
+
+	<!-- Energy -->
 	<string name="UnitConvCatEnergy_Joule">Joule</string>
 	<string name="UnitConvCatEnergy_Kilojoule">Kilojoule</string>
 	<string name="UnitConvCatEnergy_Calorie">Kalorie</string>
 	<string name="UnitConvCatEnergy_Kilocalorie">Kilokalorie</string>
+	<string name="UnitConvCatEnergy_WattHour">Wattstunde</string>
+	<string name="UnitConvCatEnergy_KilowattHour">Kilowattstunde</string>
+	<string name="UnitConvCatEnergy_Electronvolt">Elektronenvolt</string>
+	<string name="UnitConvCatEnergy_BTU">Britische Wärmeeinheit (BTU)</string>
+	<string name="UnitConvCatEnergy_Erg">Erg</string>
+	<string name="UnitConvCatEnergy_FootPound">Fuß-Pfund</string>
+
+	<!-- Power -->
 	<string name="UnitConvCatPower_Watt">Watt</string>
 	<string name="UnitConvCatPower_Kilowatt">Kilowatt</string>
 	<string name="UnitConvCatPower_Horsepower">Pferdestärke</string>
+	<string name="UnitConvCatPower_Megawatt">Megawatt</string>
+	<string name="UnitConvCatPower_MetricHorsepower">Metrische Pferdestärke</string>
+
+	<!-- Pressure -->
 	<string name="UnitConvCatPressure_Pascal">Pascal</string>
 	<string name="UnitConvCatPressure_Bar">Bar</string>
-	<string name="UnitConvCatPressure_PSI">Psi</string>
+	<string name="UnitConvCatPressure_PSI">PSI</string>
+	<string name="UnitConvCatPressure_Atmosphere">Atmosphäre</string>
+	<string name="UnitConvCatPressure_Torr">Torr</string>
+	<string name="UnitConvCatPressure_MmHg">Millimeter-Quecksilbersäule (mm Hg)</string>
+	<string name="UnitConvCatPressure_Kilopascal">Kilopascal</string>
+	<string name="UnitConvCatPressure_Millibar">Millibar</string>
+	<string name="UnitConvCatPressure_KgfPerCm2">Kilopond pro cm²</string>
+
+	<!-- Frequency -->
 	<string name="UnitConvCatFrequency_Hertz">Hertz</string>
 	<string name="UnitConvCatFrequency_Kilohertz">Kilohertz</string>
 	<string name="UnitConvCatFrequency_Megahertz">Megahertz</string>
+	<string name="UnitConvCatFrequency_Gigahertz">Gigahertz</string>
+
+	<!-- Data -->
 	<string name="UnitConvCatData_Bit">Bit</string>
 	<string name="UnitConvCatData_Byte">Byte</string>
 	<string name="UnitConvCatData_Kilobyte">Kilobyte</string>
 	<string name="UnitConvCatData_Megabyte">Megabyte</string>
-	<string name="UnitConvCatFuelEconomy_LitersPer100km">L/100 km</string>
-	<string name="UnitConvCatFuelEconomy_MPG_US">MPG (USA)</string>
+	<string name="UnitConvCatData_Kilobit">Kilobit</string>
+	<string name="UnitConvCatData_Mebibit">Mebibit</string>
+	<string name="UnitConvCatData_Megabit">Megabit</string>
+	<string name="UnitConvCatData_Gigabit">Gigabit</string>
+	<string name="UnitConvCatData_Gigabyte">Gigabyte</string>
+	<string name="UnitConvCatData_Terabit">Terabit</string>
+	<string name="UnitConvCatData_Terabyte">Terabyte</string>
+	<string name="UnitConvCatData_Petabit">Petabit</string>
+	<string name="UnitConvCatData_Petabyte">Petabyte</string>
+	<string name="UnitConvCatData_Kibibyte">Kibibyte</string>
+	<string name="UnitConvCatData_Mebibyte">Mebibyte</string>
+	<string name="UnitConvCatData_Gibibyte">Gibibyte</string>
+	<string name="UnitConvCatData_Tebibyte">Tebibyte</string>
+	<string name="UnitConvCatData_Exabit">Exabit</string>
+	<string name="UnitConvCatData_Exabyte">Exabyte</string>
+	<string name="UnitConvCatData_Pebibyte">Pebibyte</string>
+	<string name="UnitConvCatData_Exbibyte">Exbibyte</string>
+
+	<!-- Fuel Economy -->
+	<string name="UnitConvCatFuelEconomy_LitersPer100km">Liter pro 100 km</string>
+	<string name="UnitConvCatFuelEconomy_MPG_US">Meilen pro Gallone (US)</string>
+	<string name="UnitConvCatFuelEconomy_MPG_UK">Meilen pro Gallone (UK)</string>
+
+	<!-- Plane Angle -->
 	<string name="UnitConvCatPlaneAngle_Degree">Grad</string>
-	<string name="UnitConvCatPlaneAngle_Radian">Radian</string>
+	<string name="UnitConvCatPlaneAngle_Radian">Radiant</string>
+	<string name="UnitConvCatPlaneAngle_Arcminute">Bogenminute</string>
+	<string name="UnitConvCatPlaneAngle_Arcsecond">Bogensekunde</string>
+	<string name="UnitConvCatPlaneAngle_Grad">Gon</string>
+
+	<!-- Amount -->
+	<string name="UnitConvCatAmount_Mole">Mol</string>
+	<string name="UnitConvCatAmount_Kilomole">Kilomol</string>
+	<string name="UnitConvCatAmount_Millimole">Millimol</string>
+	<string name="UnitConvCatAmount_Micromole">Mikromol</string>
+	<string name="UnitConvCatAmount_Nanomole">Nanomol</string>
+	<string name="UnitConvCatAmount_Picomole">Pikomol</string>
+
 </resources>
