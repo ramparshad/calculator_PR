@@ -57,10 +57,10 @@ class CurrencyRepository @Inject constructor(
         val cachedJson = cachedEntity?.json
         val cachedRates = if (cachedJson != null) {
             parseRates(cachedJson, base).also {
-                Log.d(TAG, "getRatesFlow: Emit cached rates (${it.size} Einträge)")
+                Log.d(TAG, "getRatesFlow: Emit cached rates (${it.size} Entries)")
             }
         } else {
-            Log.d(TAG, "getRatesFlow: Kein Cache vorhanden → emit emptyMap()")
+            Log.d(TAG, "getRatesFlow: No cache available → emit emptyMap()")
             emptyMap()
         }
         emit(cachedRates)
@@ -78,21 +78,21 @@ class CurrencyRepository @Inject constructor(
             // 3) Netzwerk-Fetch (+ Upsert)
             if (isOnline) {
                 try {
-                    Log.d(TAG, "getRatesFlow: Online → fetchRatesJson() starten")
+                    Log.d(TAG, "getRatesFlow: Online → start fetchRatesJson()")
                     val fresh = fetchRatesJson(base)
                     if (fresh.isNotBlank() && fresh != "{}") {
-                        Log.d(TAG, "getRatesFlow: Frische Daten erhalten (${fresh.length} Zeichen), upserten…")
+                        Log.d(TAG, "getRatesFlow: Received fresh data (${fresh.length} Character), upserting…")
                         rateDao.upsert(CurrencyRateEntity(base, fresh, System.currentTimeMillis()))
                     } else {
-                        Log.w(TAG, "getRatesFlow: Leeres Ergebnis vom API → Fallback auf Cache")
+                        Log.w(TAG, "getRatesFlow: Empty result from API → Fallback to cache")
                         cachedJson ?: "{}"
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "getRatesFlow: Fehler beim Fetch → Fallback auf Cache", e)
+                    Log.e(TAG, "getRatesFlow: Error during fetch → Fallback to cache", e)
                     cachedJson ?: "{}"
                 }
             } else {
-                Log.w(TAG, "getRatesFlow: Offline und Refresh nötig → Fallback auf Cache")
+                Log.w(TAG, "getRatesFlow: Offline and refresh required → Fallback to cache")
                 cachedJson ?: "{}"
             }
 
@@ -104,10 +104,10 @@ class CurrencyRepository @Inject constructor(
             } else emptyMap()
 
             if (updatedRates != cachedRates) {
-                Log.d(TAG, "getRatesFlow: Emit updated rates (${updatedRates.size} Einträge)")
+                Log.d(TAG, "getRatesFlow: Emit updated rates (${updatedRates.size} entries)")
                 emit(updatedRates)
             } else {
-                Log.d(TAG, "getRatesFlow: Keine Änderung zu gecachten Raten")
+                Log.d(TAG, "getRatesFlow: No change to cached rates")
             }
         }
 
@@ -131,10 +131,10 @@ class CurrencyRepository @Inject constructor(
         val cachedJson = cachedEntity?.json
         val cachedList = if (cachedJson != null) {
             parseCurrencies(cachedJson).also {
-                Log.d(TAG, "getCurrenciesFlow: Emit cached list (${it.size} Einträge)")
+                Log.d(TAG, "getCurrenciesFlow: Emit cached list (${it.size} entries)")
             }
         } else {
-            Log.d(TAG, "getCurrenciesFlow: Kein Cache → emit emptyList()")
+            Log.d(TAG, "getCurrenciesFlow: No Cache → emit emptyList()")
             emptyList()
         }
         emit(cachedList)
@@ -157,18 +157,18 @@ class CurrencyRepository @Inject constructor(
                     Log.d(TAG, "getCurrenciesFlow: Online → fetchCurrenciesJson() starten")
                     val fresh = fetchCurrenciesJson()
                     if (fresh.isNotBlank() && fresh != "{}") {
-                        Log.d(TAG, "getCurrenciesFlow: Frische Liste erhalten (${fresh.length} Zeichen), upserten…")
+                        Log.d(TAG, "getCurrenciesFlow: Received fresh list (${fresh.length} characters), upserting...")
                         listDao.upsert(CurrencyListEntity(json = fresh, timestamp = System.currentTimeMillis()))
                     } else {
-                        Log.w(TAG, "getCurrenciesFlow: Leeres Ergebnis vom API → Fallback auf Cache")
+                        Log.w(TAG, "getCurrenciesFlow: Empty result from API → Fallback to cache")
                         cachedJson ?: "{}"
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "getCurrenciesFlow: Fehler beim Fetch → Fallback auf Cache", e)
+                    Log.e(TAG, "getCurrenciesFlow: Error during fetch → Fallback to cache", e)
                     cachedJson ?: "{}"
                 }
             } else {
-                Log.w(TAG, "getCurrenciesFlow: Offline und Refresh nötig → Fallback auf Cache")
+                Log.w(TAG, "getCurrenciesFlow: Offline and refresh required → Fallback to cache")
                 cachedJson ?: "{}"
             }
 
@@ -176,10 +176,10 @@ class CurrencyRepository @Inject constructor(
             val updatedJson = listDao.get()?.json
             val updatedList = updatedJson?.let(::parseCurrencies) ?: emptyList()
             if (updatedList != cachedList) {
-                Log.d(TAG, "getCurrenciesFlow: Emit updated list (${updatedList.size} Einträge)")
+                Log.d(TAG, "getCurrenciesFlow: Emit updated list (${updatedList.size} entries)")
                 emit(updatedList)
             } else {
-                Log.d(TAG, "getCurrenciesFlow: Keine Änderung zur gecachten Liste")
+                Log.d(TAG, "getCurrenciesFlow: No change to the cached list")
             }
         }
 
@@ -196,7 +196,7 @@ class CurrencyRepository @Inject constructor(
             val root = gson.fromJson(rawJson, JsonObject::class.java)
             val key = base.lowercase()
             if (!root.has(key) || root.getAsJsonObject(key) == null) {
-                Log.w(TAG, "parseRates: Kein Feld '$key' im JSON, returning emptyMap()")
+                Log.w(TAG, "parseRates: No field '$key' in JSON, returning emptyMap()")
                 return emptyMap()
             }
             val ratesObj = root.getAsJsonObject(key)
