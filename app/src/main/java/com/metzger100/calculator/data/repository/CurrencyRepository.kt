@@ -4,17 +4,20 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.metzger100.calculator.data.local.dao.CurrencyListDao
-import com.metzger100.calculator.data.local.entity.CurrencyListEntity
-import com.metzger100.calculator.data.local.dao.CurrencyPrefsDao
-import com.metzger100.calculator.data.local.entity.CurrencyPrefsEntity
 import com.metzger100.calculator.data.local.dao.CurrencyRateDao
+import com.metzger100.calculator.data.local.dao.CurrencyPrefsDao
+import com.metzger100.calculator.data.local.entity.CurrencyListEntity
 import com.metzger100.calculator.data.local.entity.CurrencyRateEntity
+import com.metzger100.calculator.data.local.entity.CurrencyPrefsEntity
 import com.metzger100.calculator.di.IoDispatcher
-import io.ktor.client.*
-import io.ktor.client.request.*
+import io.ktor.client.HttpClient
+import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -30,248 +33,337 @@ class CurrencyRepository @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
     private val gson = Gson()
-
     private val TAG = "CurrencyRepository"
 
-    /** Gibt eine Map von Währungscode → Kurs zurück (Basis = [base]). */
-    suspend fun getRates(base: String, forceRefresh: Boolean = false, isOnline: Boolean = true): Map<String, Double> = withContext(ioDispatcher) {
-        val nowMillis    = System.currentTimeMillis()
-        val nowUtcDate   = LocalDate.now(ZoneOffset.UTC)
-        val nowUtcHour   = Instant.ofEpochMilli(nowMillis)
-            .atOffset(ZoneOffset.UTC)
-            .hour
+    /**
+     * Liefert einen Flow<Map<CurrencyCode, Rate>>, der
+     * 1) sofort die gecachten Raten emittet,
+     * 2) bei Bedarf das Netzwerk befragt und
+     * 3) nach erfolgreichem Upsert erneut emittet.
+     *
+     * @param base der ISO-Code der Basiswährung (z.B. "USD")
+     * @param forceRefresh erzwingt immer ein Refetch
+     * @param isOnline aktueller Netzwerkstatus
+     */
+    fun getRatesFlow(
+        base: String,
+        forceRefresh: Boolean = false,
+        isOnline: Boolean = true
+    ): Flow<Map<String, Double>> = flow {
+        Log.d(TAG, "getRatesFlow(base=$base, forceRefresh=$forceRefresh, isOnline=$isOnline) START")
 
-        // 1) lade die gecachte Entity (falls vorhanden)
+        // 1) Cache auslesen und emitten
         val cachedEntity = rateDao.get(base)
-
-        // 2) parse aus dem gecachten JSON das "date"-Feld (API-Datum)
-        val cachedApiDate: LocalDate? = cachedEntity?.json?.let { json ->
-            runCatching {
-                gson.fromJson(json, JsonObject::class.java)
-                    .get("date").asString
-                    .let(LocalDate::parse)
-            }.getOrNull()
+        val cachedJson = cachedEntity?.json
+        val cachedRates = if (cachedJson != null) {
+            parseRates(cachedJson, base).also {
+                Log.d(TAG, "getRatesFlow: Emit cached rates (${it.size} Einträge)")
+            }
+        } else {
+            Log.d(TAG, "getRatesFlow: Kein Cache vorhanden → emit emptyMap()")
+            emptyMap()
         }
+        emit(cachedRates)
 
+        // 2) Refresh-Entscheidung
+        val nowUtc = Instant.now().atOffset(ZoneOffset.UTC)
+        val cachedDate = cachedJson?.let { extractDate(it) }
         val shouldRefresh = forceRefresh
-                || cachedEntity == null
-                || (nowUtcHour >= 2 && cachedApiDate != nowUtcDate)
+                || cachedJson == null
+                || (nowUtc.hour >= 2 && cachedDate != nowUtc.toLocalDate())
 
-        Log.d(TAG, "getRates: Checking for update - forceRefresh=$forceRefresh, cachedEntityIsNull=${cachedEntity == null}, timeConditionMet=${nowUtcHour >= 2 && cachedApiDate != nowUtcDate}")
+        Log.d(TAG, "getRatesFlow: shouldRefresh=$shouldRefresh (cachedDate=$cachedDate, nowUtcHour=${nowUtc.hour})")
 
-        val rawJson = if (shouldRefresh) {
+        if (shouldRefresh) {
+            // 3) Netzwerk-Fetch (+ Upsert)
             if (isOnline) {
-                Log.d(TAG, "getRates: Trying to fetch rates: isOnline = $isOnline.")
                 try {
-                    Log.d(TAG, "getRates: Fetching fresh rates for base=$base from API...")
+                    Log.d(TAG, "getRatesFlow: Online → fetchRatesJson() starten")
                     val fresh = fetchRatesJson(base)
-                    if (fresh != "{}") {
-                        Log.d(TAG, "getRates: Database updated with fresh data for base: $base.")
-                        rateDao.upsert(CurrencyRateEntity(base = base, json = fresh, timestamp = nowMillis))
-                        fresh
+                    if (fresh.isNotBlank() && fresh != "{}") {
+                        Log.d(TAG, "getRatesFlow: Frische Daten erhalten (${fresh.length} Zeichen), upserten…")
+                        rateDao.upsert(CurrencyRateEntity(base, fresh, System.currentTimeMillis()))
                     } else {
-                        Log.w(TAG, "getRates: Fresh data empty, falling back to cache.")
-                        cachedEntity?.json ?: "{}"
+                        Log.w(TAG, "getRatesFlow: Leeres Ergebnis vom API → Fallback auf Cache")
+                        cachedJson ?: "{}"
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "getRates: Error fetching rates: ${e.localizedMessage}, falling back to cache.")
-                    cachedEntity?.json ?: "{}"
+                    Log.e(TAG, "getRatesFlow: Fehler beim Fetch → Fallback auf Cache", e)
+                    cachedJson ?: "{}"
                 }
             } else {
-                Log.w(TAG, "getRates: Should refresh but offline -> using cached data.")
-                cachedEntity?.json ?: "{}"
+                Log.w(TAG, "getRatesFlow: Offline und Refresh nötig → Fallback auf Cache")
+                cachedJson ?: "{}"
+            }
+
+            // 4) Aktualisierte DB erneut auslesen und emitten
+            val updatedEntity = rateDao.get(base)
+            val updatedJson = updatedEntity?.json
+            val updatedRates = if (updatedJson != null) {
+                parseRates(updatedJson, base)
+            } else emptyMap()
+
+            if (updatedRates != cachedRates) {
+                Log.d(TAG, "getRatesFlow: Emit updated rates (${updatedRates.size} Einträge)")
+                emit(updatedRates)
+            } else {
+                Log.d(TAG, "getRatesFlow: Keine Änderung zu gecachten Raten")
+            }
+        }
+
+        Log.d(TAG, "getRatesFlow END")
+    }.flowOn(ioDispatcher)
+
+    /**
+     * Liefert einen Flow<List<CurrencyCode, Title>>, der
+     * 1) sofort die gecachte Liste emittet,
+     * 2) bei Bedarf das Netzwerk befragt und
+     * 3) nach erfolgreichem Upsert erneut emittet.
+     */
+    fun getCurrenciesFlow(
+        forceRefresh: Boolean = false,
+        isOnline: Boolean = true
+    ): Flow<List<Pair<String, String>>> = flow {
+        Log.d(TAG, "getCurrenciesFlow(forceRefresh=$forceRefresh, isOnline=$isOnline) START")
+
+        // 1) Cache
+        val cachedEntity = listDao.get()
+        val cachedJson = cachedEntity?.json
+        val cachedList = if (cachedJson != null) {
+            parseCurrencies(cachedJson).also {
+                Log.d(TAG, "getCurrenciesFlow: Emit cached list (${it.size} Einträge)")
             }
         } else {
-            Log.d(TAG, "getRates: Using cached rates.")
-            cachedEntity?.json ?: "{}"
+            Log.d(TAG, "getCurrenciesFlow: Kein Cache → emit emptyList()")
+            emptyList()
         }
+        emit(cachedList)
 
-        // Parsen und Rückgabe
-        val root = try {
-            gson.fromJson(rawJson, JsonObject::class.java)
-        } catch (e: Exception) {
-            Log.e(TAG, "getRates: JSON parsing failed: ${e.localizedMessage}")
-            null
-        }
+        // 2) Refresh?
+        val nowUtc = Instant.now().atOffset(ZoneOffset.UTC)
+        val cacheDate = cachedEntity
+            ?.timestamp
+            ?.let { Instant.ofEpochMilli(it).atOffset(ZoneOffset.UTC).toLocalDate() }
+        val shouldRefresh = forceRefresh
+                || cachedEntity == null
+                || (nowUtc.hour >= 2 && cacheDate != nowUtc.toLocalDate())
 
-        if (root == null || !root.has(base.lowercase())) {
-            Log.d(TAG, "getRates: No valid data for base $base.")
-            emptyMap()
-        } else {
-            val ratesObj = root.getAsJsonObject(base.lowercase())
-            ratesObj.entrySet().associate { it.key to it.value.asDouble }
-        }
-    }
+        Log.d(TAG, "getCurrenciesFlow: shouldRefresh=$shouldRefresh (cacheDate=$cacheDate, nowUtcHour=${nowUtc.hour})")
 
-    suspend fun getLastApiDateForBase(base: String): LocalDate? = withContext(ioDispatcher) {
-        rateDao.get(base)?.json
-            ?.let { json ->
+        if (shouldRefresh) {
+            // 3) Fetch & Upsert
+            if (isOnline) {
                 try {
-                    val root = gson.fromJson(json, JsonObject::class.java)
-                    if (root.has("date")) {
-                        LocalDate.parse(root.get("date").asString)
-                    } else null
+                    Log.d(TAG, "getCurrenciesFlow: Online → fetchCurrenciesJson() starten")
+                    val fresh = fetchCurrenciesJson()
+                    if (fresh.isNotBlank() && fresh != "{}") {
+                        Log.d(TAG, "getCurrenciesFlow: Frische Liste erhalten (${fresh.length} Zeichen), upserten…")
+                        listDao.upsert(CurrencyListEntity(json = fresh, timestamp = System.currentTimeMillis()))
+                    } else {
+                        Log.w(TAG, "getCurrenciesFlow: Leeres Ergebnis vom API → Fallback auf Cache")
+                        cachedJson ?: "{}"
+                    }
                 } catch (e: Exception) {
-                    Log.e(TAG, "getLastApiDateForBase: JSON parsing failed: ${e.localizedMessage}")
-                    null
+                    Log.e(TAG, "getCurrenciesFlow: Fehler beim Fetch → Fallback auf Cache", e)
+                    cachedJson ?: "{}"
                 }
+            } else {
+                Log.w(TAG, "getCurrenciesFlow: Offline und Refresh nötig → Fallback auf Cache")
+                cachedJson ?: "{}"
             }
+
+            // 4) Emit aktualisiert
+            val updatedJson = listDao.get()?.json
+            val updatedList = updatedJson?.let(::parseCurrencies) ?: emptyList()
+            if (updatedList != cachedList) {
+                Log.d(TAG, "getCurrenciesFlow: Emit updated list (${updatedList.size} Einträge)")
+                emit(updatedList)
+            } else {
+                Log.d(TAG, "getCurrenciesFlow: Keine Änderung zur gecachten Liste")
+            }
+        }
+
+        Log.d(TAG, "getCurrenciesFlow END")
+    }.flowOn(ioDispatcher)
+
+    // ----------------------------------------
+    // Hilfsfunktionen
+    // ----------------------------------------
+
+    /** Parst das API-JSON zu Map<Code, Rate> basierend auf dem übergebenen Base-Code. */
+    private fun parseRates(rawJson: String, base: String): Map<String, Double> {
+        return try {
+            val root = gson.fromJson(rawJson, JsonObject::class.java)
+            val key = base.lowercase()
+            if (!root.has(key) || root.getAsJsonObject(key) == null) {
+                Log.w(TAG, "parseRates: Kein Feld '$key' im JSON, returning emptyMap()")
+                return emptyMap()
+            }
+            val ratesObj = root.getAsJsonObject(key)
+            ratesObj.entrySet().associate { it.key to it.value.asDouble }
+        } catch (e: Exception) {
+            Log.e(TAG, "parseRates: JSON parsing failed", e)
+            emptyMap()
+        }
     }
+
+    /** Extrahiert das "date"-Feld aus dem rohen JSON. */
+    private fun extractDate(rawJson: String): LocalDate? = try {
+        gson.fromJson(rawJson, JsonObject::class.java)
+            .get("date").asString
+            .let(LocalDate::parse)
+    } catch (e: Exception) {
+        Log.e(TAG, "extractDate: JSON parsing failed", e)
+        null
+    }
+
+    /** Parst das JSON der Währungsliste zu List<Code, Title>. */
+    private fun parseCurrencies(rawJson: String): List<Pair<String, String>> {
+        return try {
+            gson.fromJson(rawJson, JsonObject::class.java)
+                .entrySet()
+                .map { it.key.uppercase() to it.value.asString }
+                .sortedBy { it.first }
+        } catch (e: Exception) {
+            Log.e(TAG, "parseCurrencies: JSON parsing failed", e)
+            emptyList()
+        }
+    }
+
+    // ----------------------------------------
+    // Netzwerk-Fetch-Logik (3-Phasen)
+    // ----------------------------------------
 
     private suspend fun fetchRatesJson(base: String): String {
         val todayUtc = LocalDate.now(ZoneOffset.UTC)
         val lower = base.lowercase()
 
-        // Phase 1: jsDelivr genau für heute
+        // Phase 1: jsDelivr mit Datumstag
         runCatching {
             val versionTag = "${todayUtc.year}.${todayUtc.monthValue}.${todayUtc.dayOfMonth}"
             val url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@$versionTag/v1/currencies/$lower.json"
-            Log.d(TAG, "fetchRatesJson: trying jsDelivr date=$versionTag → $url")
+            Log.d(TAG, "fetchRatesJson[1]: Trying jsDelivr date=$versionTag: $url")
             val body = httpClient.get(url).bodyAsText()
             if (!body.contains("Couldn't find the requested release version")) {
-                Log.d(TAG, "fetchRatesJson: success jsDelivr date=$versionTag")
+                Log.d(TAG, "fetchRatesJson[1]: Success")
                 return body
             }
-            Log.d(TAG, "fetchRatesJson: jsDelivr date=$versionTag not available yet")
+            Log.d(TAG, "fetchRatesJson[1]: Not available yet")
         }.onFailure {
-            Log.d(TAG, "fetchRatesJson: jsDelivr date fetch error, will try pages.dev")
+            Log.w(TAG, "fetchRatesJson[1]: Error, will try pages.dev", it)
         }
 
-        // Phase 2: pages.dev genau für heute
+        // Phase 2: pages.dev mit yyyy-MM-dd
         runCatching {
-            val dateTag = todayUtc.toString()  // yyyy-MM-dd
+            val dateTag = todayUtc.toString()
             val url = "https://$dateTag.currency-api.pages.dev/v1/currencies/$lower.json"
-            Log.d(TAG, "fetchRatesJson: trying pages.dev date=$dateTag → $url")
+            Log.d(TAG, "fetchRatesJson[2]: Trying pages.dev date=$dateTag: $url")
             val body = httpClient.get(url).bodyAsText()
             if (!body.contains("<h1")) {
-                Log.d(TAG, "fetchRatesJson: success pages.dev date=$dateTag")
+                Log.d(TAG, "fetchRatesJson[2]: Success")
                 return body
             }
-            Log.d(TAG, "fetchRatesJson: pages.dev date=$dateTag not ready yet")
+            Log.d(TAG, "fetchRatesJson[2]: Not ready yet")
         }.onFailure {
-            Log.d(TAG, "fetchRatesJson: pages.dev fetch error, will try @latest")
+            Log.w(TAG, "fetchRatesJson[2]: Error, will try @latest", it)
         }
 
-        // Phase 3: jsDelivr @latest
+        // Phase 3: @latest
         runCatching {
             val url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/$lower.json"
-            Log.d(TAG, "fetchRatesJson: falling back to @latest → $url")
+            Log.d(TAG, "fetchRatesJson[3]: Trying @latest: $url")
             return httpClient.get(url).bodyAsText()
         }.onFailure {
-            Log.d(TAG, "fetchRatesJson: @latest fetch failed, returning empty JSON")
+            Log.e(TAG, "fetchRatesJson[3]: @latest fetch failed", it)
         }
 
+        Log.e(TAG, "fetchRatesJson: All attempts failed → returning empty JSON")
         return "{}"
     }
 
-    suspend fun getCurrencies(forceRefresh: Boolean = false, isOnline: Boolean = true): List<Pair<String, String>> =
-        withContext(ioDispatcher) {
-            val nowMillis   = System.currentTimeMillis()
-            val nowUtcDate  = LocalDate.now(ZoneOffset.UTC)
-            val nowUtcHour  = Instant.ofEpochMilli(nowMillis)
-                .atOffset(ZoneOffset.UTC)
-                .hour
-
-            val cachedEntity = listDao.get()
-
-            val cacheDateUtc: LocalDate? = cachedEntity?.timestamp
-                ?.let { ts ->
-                    Instant.ofEpochMilli(ts)
-                        .atOffset(ZoneOffset.UTC)
-                        .toLocalDate()
-                }
-
-            val shouldRefresh = forceRefresh
-                    || cachedEntity == null
-                    || (nowUtcHour >= 2 && cacheDateUtc != nowUtcDate)
-
-            Log.d(TAG, "getCurrencies: Checking for update - forceRefresh=$forceRefresh, cachedEntityIsNull=${cachedEntity == null}, timeConditionMet=${nowUtcHour >= 2 && cacheDateUtc != nowUtcDate}")
-
-            val rawJson = if (shouldRefresh) {
-                if (isOnline) {
-                    Log.d(TAG, "getCurrencies: Trying to fetch currencies: isOnline = $isOnline.")
-                    try {
-                        Log.d(TAG, "getCurrencies: Fetching fresh currency list from API...")
-                        val freshJson = fetchCurrenciesJson()
-                        if (freshJson != "{}") {
-                            Log.d(TAG, "getCurrencies: Database updated with fresh data for base.")
-                            listDao.upsert(CurrencyListEntity(json = freshJson, timestamp = nowMillis))
-                            freshJson
-                        } else {
-                            Log.w(TAG, "getCurrencies: Received empty JSON, falling back to cache.")
-                            cachedEntity?.json ?: "{}"
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "getCurrencies: Error fetching list: ${e.localizedMessage}, falling back to cache.")
-                        cachedEntity?.json ?: "{}"
-                    }
-                } else {
-                    Log.w(TAG, "getCurrencies: Should refresh but offline -> using cached data.")
-                    cachedEntity?.json ?: "{}"
-                }
-            } else {
-                Log.d(TAG, "getCurrencies: Using cached currency list.")
-                cachedEntity?.json ?: "{}"
-            }
-
-            // Parsen – "{}" ergibt einfach eine leere Liste
-            return@withContext try {
-                val root = gson.fromJson(rawJson, JsonObject::class.java)
-                root.entrySet()
-                    .map { it.key.uppercase() to it.value.asString }
-                    .sortedBy { it.first }
-            } catch (e: Exception) {
-                Log.e(TAG, "getCurrencies: JSON parsing failed: ${e.localizedMessage}")
-                emptyList()
-            }
-        }
-
-    /** Holt currencies.min.json zuerst vom CDN, bei Fehlern vom Pages-dev-Fallback. */
     private suspend fun fetchCurrenciesJson(): String {
         val todayUtc = LocalDate.now(ZoneOffset.UTC)
 
-        // Phase 1: jsDelivr genau für heute
+        // Phase 1: jsDelivr mit Datumstag
         runCatching {
             val versionTag = "${todayUtc.year}.${todayUtc.monthValue}.${todayUtc.dayOfMonth}"
             val url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@$versionTag/v1/currencies.min.json"
-            Log.d(TAG, "fetchCurrenciesJson: trying jsDelivr date=$versionTag → $url")
+            Log.d(TAG, "fetchCurrenciesJson[1]: Trying jsDelivr date=$versionTag: $url")
             val body = httpClient.get(url).bodyAsText()
             if (!body.contains("Couldn't find the requested release version")) {
-                Log.d(TAG, "fetchCurrenciesJson: success jsDelivr date=$versionTag")
+                Log.d(TAG, "fetchCurrenciesJson[1]: Success")
                 return body
             }
-            Log.d(TAG, "fetchCurrenciesJson: jsDelivr date=$versionTag not available yet")
+            Log.d(TAG, "fetchCurrenciesJson[1]: Not available yet")
         }.onFailure {
-            Log.d(TAG, "fetchCurrenciesJson: jsDelivr date fetch error, will try pages.dev")
+            Log.w(TAG, "fetchCurrenciesJson[1]: Error, will try pages.dev", it)
         }
 
-        // Phase 2: pages.dev genau für heute
+        // Phase 2: pages.dev mit yyyy-MM-dd
         runCatching {
             val dateTag = todayUtc.toString()
             val url = "https://$dateTag.currency-api.pages.dev/v1/currencies.min.json"
-            Log.d(TAG, "fetchCurrenciesJson: trying pages.dev date=$dateTag → $url")
+            Log.d(TAG, "fetchCurrenciesJson[2]: Trying pages.dev date=$dateTag: $url")
             val body = httpClient.get(url).bodyAsText()
             if (!body.contains("<h1")) {
-                Log.d(TAG, "fetchCurrenciesJson: success pages.dev date=$dateTag")
+                Log.d(TAG, "fetchCurrenciesJson[2]: Success")
                 return body
             }
-            Log.d(TAG, "fetchCurrenciesJson: pages.dev date=$dateTag not ready yet")
+            Log.d(TAG, "fetchCurrenciesJson[2]: Not ready yet")
         }.onFailure {
-            Log.d(TAG, "fetchCurrenciesJson: pages.dev fetch error, will try @latest")
+            Log.w(TAG, "fetchCurrenciesJson[2]: Error, will try @latest", it)
         }
 
-        // Phase 3: jsDelivr @latest
+        // Phase 3: @latest
         runCatching {
             val url = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.min.json"
-            Log.d(TAG, "fetchCurrenciesJson: falling back to @latest → $url")
+            Log.d(TAG, "fetchCurrenciesJson[3]: Trying @latest: $url")
             return httpClient.get(url).bodyAsText()
         }.onFailure {
-            Log.d(TAG, "fetchCurrenciesJson: @latest fetch failed, returning empty JSON")
+            Log.e(TAG, "fetchCurrenciesJson[3]: @latest fetch failed", it)
         }
 
+        Log.e(TAG, "fetchCurrenciesJson: All attempts failed → returning empty JSON")
         return "{}"
     }
 
-    suspend fun getPrefs(): CurrencyPrefsEntity? = prefsDao.get()
-    suspend fun savePrefs(p: CurrencyPrefsEntity) = prefsDao.upsert(p)
+    // ----------------------------------------
+    // Zusätzliche Helfer
+    // ----------------------------------------
+
+    /**
+     * Liest aus dem zuletzt gecachten JSON der Basis-Währung [base]
+     * das "date"-Feld und gibt es als LocalDate zurück (oder null).
+     */
+    suspend fun getLastApiDateForBase(base: String): LocalDate? = withContext(ioDispatcher) {
+        Log.d(TAG, "getLastApiDateForBase: loading cache for base=$base")
+        rateDao.get(base)?.json
+            ?.let { rawJson ->
+                runCatching {
+                    Log.d(TAG, "getLastApiDateForBase: parsing date from JSON")
+                    gson.fromJson(rawJson, JsonObject::class.java)
+                        .get("date").asString
+                        .let(LocalDate::parse)
+                }.onFailure { e ->
+                    Log.e(TAG, "getLastApiDateForBase: parsing failed", e)
+                }.getOrNull()
+            }
+            .also { date ->
+                Log.d(TAG, "getLastApiDateForBase: result = $date")
+            }
+    }
+
+    // ----------------------------------------
+    // Preferences
+    // ----------------------------------------
+
+    suspend fun getPrefs(): CurrencyPrefsEntity? = withContext(ioDispatcher) {
+        Log.d(TAG, "getPrefs()")
+        prefsDao.get()
+    }
+
+    suspend fun savePrefs(prefs: CurrencyPrefsEntity) = withContext(ioDispatcher) {
+        Log.d(TAG, "savePrefs(prefs=$prefs)")
+        prefsDao.upsert(prefs)
+    }
 }

@@ -1,33 +1,37 @@
 package com.metzger100.calculator.features.currency.viewmodel
 
 import android.annotation.SuppressLint
-import androidx.compose.runtime.mutableStateOf
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.metzger100.calculator.data.ConnectivityObserver
-import com.metzger100.calculator.data.repository.CurrencyRepository
 import com.metzger100.calculator.data.local.entity.CurrencyPrefsEntity
+import com.metzger100.calculator.data.repository.CurrencyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jakarta.inject.Inject
-import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Locale
+import javax.inject.Inject
 
 @HiltViewModel
+@SuppressLint("DefaultLocale")
 class CurrencyViewModel @Inject constructor(
     private val repo: CurrencyRepository,
     private val connectivityObserver: ConnectivityObserver
 ) : ViewModel() {
 
-    // Zustand für Ladestatus
-    var isLoading by mutableStateOf(true)
-        private set
+    companion object {
+        private const val TAG = "CurrencyViewModel"
+    }
 
-    // expose UI state
+    // UI state
     var currency1 by mutableStateOf("USD"); private set
     var currency2 by mutableStateOf("EUR"); private set
     var selectedField by mutableStateOf(1); private set
@@ -47,134 +51,214 @@ class CurrencyViewModel @Inject constructor(
     val lastApiDate: State<LocalDate?> = _lastApiDate
 
     init {
-        isLoading = true
         viewModelScope.launch {
-            val isOnline = connectivityObserver.isOnline()
-            repo.getPrefs()?.let { p ->
-                selectedField = p.activeField
-                currency1     = p.currency1
-                currency2     = p.currency2
-                value1        = p.amount1
-                value2        = p.amount2
+            Log.d(TAG, "init: START")
+            // 1) Connectivity
+            val online = connectivityObserver.isOnline()
+            Log.d(TAG, "init: connectivity = $online")
+
+            // 2) Load saved prefs
+            repo.getPrefs()?.let { prefs ->
+                Log.d(TAG, "init: loaded prefs: $prefs")
+                selectedField = prefs.activeField
+                currency1     = prefs.currency1
+                currency2     = prefs.currency2
+                value1        = prefs.amount1
+                value2        = prefs.amount2
             }
 
-            val currenciesDeferred = async { repo.getCurrencies(isOnline = isOnline) }
-            val ratesDeferred = async { repo.getRates(_base.value, isOnline = isOnline) }
-            val lastApiDateDeferred = async { repo.getLastApiDateForBase(_base.value) }
+            // 3) Currencies: Cache → Network
+            Log.d(TAG, "init: subscribing to currenciesFlow")
+            repo.getCurrenciesFlow(forceRefresh = false, isOnline = online)
+                .onEach { list ->
+                    Log.d(TAG, "currenciesFlow: emit ${list.size} entries")
+                    _currenciesWithTitles.value = list
+                }
+                .catch { e ->
+                    Log.e(TAG, "currenciesFlow: error", e)
+                }
+                .launchIn(this)
 
-            _currenciesWithTitles.value = currenciesDeferred.await()
-            _rates.value = ratesDeferred.await()
-            _lastApiDate.value = lastApiDateDeferred.await()
+            // 4) Rates: Cache → Network
+            Log.d(TAG, "init: subscribing to ratesFlow(base=${_base.value})")
+            repo.getRatesFlow(base.value, forceRefresh = false, isOnline = online)
+                .onEach { map ->
+                    Log.d(TAG, "ratesFlow: emit ${map.size} entries")
+                    _rates.value = map
 
-            isLoading = false
-            recalc()
+                    // update lastApiDate
+                    val date = repo.getLastApiDateForBase(base.value)
+                    _lastApiDate.value = date
+                    Log.d(TAG, "ratesFlow: lastApiDate = $date")
+
+                    // recalc
+                    recalc()
+                    Log.d(TAG, "ratesFlow: recalc done, value1=$value1, value2=$value2")
+                }
+                .catch { e ->
+                    Log.e(TAG, "ratesFlow: error", e)
+                }
+                .launchIn(this)
+
+            Log.d(TAG, "init: END")
         }
     }
 
+    /** Manuelles Nachladen (forceRefresh=false liefert Cache + frische Daten). */
     fun refreshData() {
-        isLoading = true
         viewModelScope.launch {
-            val isOnline = connectivityObserver.isOnline()
+            Log.d(TAG, "refreshData: START")
+            val online = connectivityObserver.isOnline()
+            Log.d(TAG, "refreshData: connectivity = $online")
 
-            val currenciesDeferred = async { repo.getCurrencies(isOnline = isOnline) }
-            val ratesDeferred = async { repo.getRates(_base.value, isOnline = isOnline) }
-            val lastApiDateDeferred = async { repo.getLastApiDateForBase(_base.value) }
+            repo.getCurrenciesFlow(forceRefresh = false, isOnline = online)
+                .onEach { list ->
+                    Log.d(TAG, "refreshData → currenciesFlow: emit ${list.size} entries")
+                    _currenciesWithTitles.value = list
+                }
+                .catch { e -> Log.e(TAG, "refreshData → currenciesFlow error", e) }
+                .launchIn(this)
 
-            _currenciesWithTitles.value = currenciesDeferred.await()
-            _rates.value = ratesDeferred.await()
-            _lastApiDate.value = lastApiDateDeferred.await()
+            repo.getRatesFlow(base.value, forceRefresh = false, isOnline = online)
+                .onEach { map ->
+                    Log.d(TAG, "refreshData → ratesFlow: emit ${map.size} entries")
+                    _rates.value = map
 
-            isLoading = false
-            recalc()
+                    val date = repo.getLastApiDateForBase(base.value)
+                    _lastApiDate.value = date
+                    Log.d(TAG, "refreshData → lastApiDate = $date")
+
+                    recalc()
+                    Log.d(TAG, "refreshData → recalc done, value1=$value1, value2=$value2")
+                }
+                .catch { e -> Log.e(TAG, "refreshData → ratesFlow error", e) }
+                .launchIn(this)
+
+            Log.d(TAG, "refreshData: END")
         }
     }
 
+    /** Forciertes Nachladen (network-first). */
     fun forceRefreshData() {
-        isLoading = true
         viewModelScope.launch {
-            val isOnline = connectivityObserver.isOnline()
+            Log.d(TAG, "forceRefreshData: START")
+            val online = connectivityObserver.isOnline()
+            Log.d(TAG, "forceRefreshData: connectivity = $online")
 
-            val currenciesDeferred = async { repo.getCurrencies(forceRefresh = true, isOnline = isOnline) }
-            val ratesDeferred = async { repo.getRates(_base.value, forceRefresh = true, isOnline = isOnline) }
-            val lastApiDateDeferred = async { repo.getLastApiDateForBase(_base.value) }
+            repo.getCurrenciesFlow(forceRefresh = true, isOnline = online)
+                .onEach { list ->
+                    Log.d(TAG, "forceRefresh → currenciesFlow: emit ${list.size} entries")
+                    _currenciesWithTitles.value = list
+                }
+                .catch { e -> Log.e(TAG, "forceRefresh → currenciesFlow error", e) }
+                .launchIn(this)
 
-            _currenciesWithTitles.value = currenciesDeferred.await()
-            _rates.value = ratesDeferred.await()
-            _lastApiDate.value = lastApiDateDeferred.await()
+            repo.getRatesFlow(base.value, forceRefresh = true, isOnline = online)
+                .onEach { map ->
+                    Log.d(TAG, "forceRefresh → ratesFlow: emit ${map.size} entries")
+                    _rates.value = map
 
-            isLoading = false
-            recalc()
+                    val date = repo.getLastApiDateForBase(base.value)
+                    _lastApiDate.value = date
+                    Log.d(TAG, "forceRefresh → lastApiDate = $date")
+
+                    recalc()
+                    Log.d(TAG, "forceRefresh → recalc done, value1=$value1, value2=$value2")
+                }
+                .catch { e -> Log.e(TAG, "forceRefresh → ratesFlow error", e) }
+                .launchIn(this)
+
+            Log.d(TAG, "forceRefreshData: END")
         }
     }
 
     private fun persistPrefs() {
         viewModelScope.launch {
-            repo.savePrefs(
-                CurrencyPrefsEntity(
-                    id = 1,
-                    activeField = selectedField,
-                    currency1 = currency1,
-                    currency2 = currency2,
-                    amount1 = value1,
-                    amount2 = value2
-                )
+            val prefs = CurrencyPrefsEntity(
+                id = 1,
+                activeField = selectedField,
+                currency1 = currency1,
+                currency2 = currency2,
+                amount1 = value1,
+                amount2 = value2
             )
+            Log.d(TAG, "persistPrefs: $prefs")
+            repo.savePrefs(prefs)
         }
     }
 
     fun onSelectField(field: Int) {
+        Log.d(TAG, "onSelectField: $field")
         selectedField = field
         persistPrefs()
     }
 
     fun onCurrencyChanged1(code: String) {
+        Log.d(TAG, "onCurrencyChanged1: $code")
         currency1 = code
         recalc()
         persistPrefs()
     }
+
     fun onCurrencyChanged2(code: String) {
+        Log.d(TAG, "onCurrencyChanged2: $code")
         currency2 = code
         recalc()
         persistPrefs()
     }
+
     fun onValueChange(newValue: String) {
-        if (selectedField == 1) {
-            value1 = newValue
-        } else {
-            value2 = newValue
-        }
+        Log.d(TAG, "onValueChange: field=$selectedField, newValue='$newValue'")
+        if (selectedField == 1) value1 = newValue else value2 = newValue
         recalc()
         persistPrefs()
     }
 
     private fun recalc() {
         if (selectedField == 1) {
-            // Wenn das erste Feld leer ist, auch das zweite leeren
             if (value1.isBlank()) {
+                Log.d(TAG, "recalc: value1 blank → clearing value2")
                 value2 = ""
             } else {
                 value2 = convert(value1, currency1, currency2)
+                Log.d(TAG, "recalc: $value1 $currency1 → $value2 $currency2")
             }
         } else {
-            // Wenn das zweite Feld leer ist, auch das erste leeren
             if (value2.isBlank()) {
+                Log.d(TAG, "recalc: value2 blank → clearing value1")
                 value1 = ""
             } else {
                 value1 = convert(value2, currency2, currency1)
+                Log.d(TAG, "recalc: $value2 $currency2 → $value1 $currency1")
             }
         }
     }
 
-    /** Konvertiert [amount] von [from] nach [to], benutzt den geladenen Kurs. */
     @SuppressLint("DefaultLocale")
-    fun convert(amount: String, from: String, to: String): String {
-        val a = amount.toDoubleOrNull() ?: return "0.00"
-        // Wir haben eine Map:  rates["bat"] = 8.068…  bedeutet 1 EUR = 8.068 BAT
+    private fun convert(amount: String, from: String, to: String): String {
+        // 1) Eingabe normalisieren: Komma → Punkt
+        val normalized = amount.replace(',', '.')
+        val a = normalized.toDoubleOrNull()
+        if (a == null) {
+            Log.w(TAG, "convert: '$amount' ist keine Zahl")
+            return "0.00"
+        }
+
+        // 2) Kurse holen
         val map = rates.value
-        val fromRate = map[from.lowercase()] ?: return "0.00"   // wie viel 1 EUR in „from“ wert ist
-        val toRate   = map[to.lowercase()]   ?: return "0.00"   // wie viel 1 EUR in „to“ wert ist
+        val fromRate = map[from.lowercase()]
+        val toRate   = map[to.lowercase()]
+        if (fromRate == null || toRate == null) {
+            Log.w(TAG, "convert: fehlender Kurs (fromRate=$fromRate, toRate=$toRate)")
+            return "0.00"
+        }
+
+        // 3) Umrechnen
         val result = (a / fromRate) * toRate
 
-        return String.format(Locale.US, "%.2f", result)
+        // 4) Ausgabe IMMER mit Punkt: US-Locale erzwingen
+        val formatted = String.format(Locale.US, "%.2f", result)
+        Log.d(TAG, "convert: $a $from → $formatted $to")
+        return formatted
     }
 }

@@ -40,7 +40,6 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
     val currenciesWithTitles by viewModel.currenciesWithTitles
     val rates by viewModel.rates
     val lastApiDate by viewModel.lastApiDate
-    val isLoading = viewModel.isLoading
 
     // nur wichtige Währungen filtern
     val filtered by remember(currenciesWithTitles) {
@@ -84,7 +83,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
                 .padding(bottom = keyboardHeight)
         ) {
             // Fehlermeldung, falls offline ohne Daten
-            if (rates.isEmpty() && !isLoading) {
+            if (rates.isEmpty()) {
                 Text(
                     text = stringResource(id = R.string.no_exchange_data),
                     color = MaterialTheme.colorScheme.error,
