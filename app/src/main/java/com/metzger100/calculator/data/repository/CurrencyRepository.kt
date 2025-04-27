@@ -53,7 +53,9 @@ class CurrencyRepository @Inject constructor(
         Log.d(TAG, "getRatesFlow(base=$base, forceRefresh=$forceRefresh, isOnline=$isOnline) START")
 
         // 1) Cache auslesen und emitten
-        val cachedEntity = rateDao.get(base)
+        val cachedEntity = runCatching { rateDao.get(base) }
+            .onFailure { Log.e(TAG, "getRatesFlow: DB read failed", it) }
+            .getOrNull()
         val cachedJson = cachedEntity?.json
         val cachedRates = if (cachedJson != null) {
             parseRates(cachedJson, base).also {
@@ -82,7 +84,11 @@ class CurrencyRepository @Inject constructor(
                     val fresh = fetchRatesJson(base)
                     if (fresh.isNotBlank() && fresh != "{}") {
                         Log.d(TAG, "getRatesFlow: Received fresh data (${fresh.length} Character), upserting…")
-                        rateDao.upsert(CurrencyRateEntity(base, fresh, System.currentTimeMillis()))
+                        runCatching {
+                            rateDao.upsert(CurrencyRateEntity(base, fresh, System.currentTimeMillis()))
+                        }.onFailure {
+                            Log.e(TAG, "getRatesFlow: DB upsert failed", it)
+                        }
                     } else {
                         Log.w(TAG, "getRatesFlow: Empty result from API → Fallback to cache")
                         cachedJson ?: "{}"
@@ -97,7 +103,9 @@ class CurrencyRepository @Inject constructor(
             }
 
             // 4) Aktualisierte DB erneut auslesen und emitten
-            val updatedEntity = rateDao.get(base)
+            val updatedEntity = runCatching { rateDao.get(base) }
+                .onFailure { Log.e(TAG, "getRatesFlow: DB read failed", it) }
+                .getOrNull()
             val updatedJson = updatedEntity?.json
             val updatedRates = if (updatedJson != null) {
                 parseRates(updatedJson, base)
@@ -127,7 +135,9 @@ class CurrencyRepository @Inject constructor(
         Log.d(TAG, "getCurrenciesFlow(forceRefresh=$forceRefresh, isOnline=$isOnline) START")
 
         // 1) Cache
-        val cachedEntity = listDao.get()
+        val cachedEntity = runCatching { listDao.get() }
+            .onFailure { Log.e(TAG, "getCurrenciesFlow: DB read failed", it) }
+            .getOrNull()
         val cachedJson = cachedEntity?.json
         val cachedList = if (cachedJson != null) {
             parseCurrencies(cachedJson).also {
@@ -158,7 +168,11 @@ class CurrencyRepository @Inject constructor(
                     val fresh = fetchCurrenciesJson()
                     if (fresh.isNotBlank() && fresh != "{}") {
                         Log.d(TAG, "getCurrenciesFlow: Received fresh list (${fresh.length} characters), upserting...")
-                        listDao.upsert(CurrencyListEntity(json = fresh, timestamp = System.currentTimeMillis()))
+                        runCatching {
+                            listDao.upsert(CurrencyListEntity(json = fresh, timestamp = System.currentTimeMillis()))
+                        }.onFailure {
+                            Log.e(TAG, "getCurrenciesFlow: DB upsert failed", it)
+                        }
                     } else {
                         Log.w(TAG, "getCurrenciesFlow: Empty result from API → Fallback to cache")
                         cachedJson ?: "{}"
@@ -173,7 +187,9 @@ class CurrencyRepository @Inject constructor(
             }
 
             // 4) Emit aktualisiert
-            val updatedJson = listDao.get()?.json
+            val updatedJson = runCatching { listDao.get()?.json }
+                .onFailure { Log.e(TAG, "getCurrenciesFlow: DB read (updated) failed", it) }
+                .getOrNull()
             val updatedList = updatedJson?.let(::parseCurrencies) ?: emptyList()
             if (updatedList != cachedList) {
                 Log.d(TAG, "getCurrenciesFlow: Emit updated list (${updatedList.size} entries)")
@@ -336,21 +352,19 @@ class CurrencyRepository @Inject constructor(
      * das "date"-Feld und gibt es als LocalDate zurück (oder null).
      */
     suspend fun getLastApiDateForBase(base: String): LocalDate? = withContext(ioDispatcher) {
-        Log.d(TAG, "getLastApiDateForBase: loading cache for base=$base")
-        rateDao.get(base)?.json
-            ?.let { rawJson ->
-                runCatching {
-                    Log.d(TAG, "getLastApiDateForBase: parsing date from JSON")
-                    gson.fromJson(rawJson, JsonObject::class.java)
-                        .get("date").asString
-                        .let(LocalDate::parse)
-                }.onFailure { e ->
-                    Log.e(TAG, "getLastApiDateForBase: parsing failed", e)
-                }.getOrNull()
-            }
-            .also { date ->
-                Log.d(TAG, "getLastApiDateForBase: result = $date")
-            }
+        val rawJson = runCatching { rateDao.get(base)?.json }
+            .onFailure { Log.e(TAG, "getLastApiDateForBase: DB read failed", it) }
+            .getOrNull()
+
+        rawJson?.let {
+            runCatching {
+                gson.fromJson(it, JsonObject::class.java)
+                    .get("date").asString
+                    .let(LocalDate::parse)
+            }.onFailure {
+                Log.e(TAG, "getLastApiDateForBase: parse failed", it)
+            }.getOrNull()
+        }.also { Log.d(TAG, "getLastApiDateForBase: result = $it") }
     }
 
     // ----------------------------------------
@@ -358,12 +372,13 @@ class CurrencyRepository @Inject constructor(
     // ----------------------------------------
 
     suspend fun getPrefs(): CurrencyPrefsEntity? = withContext(ioDispatcher) {
-        Log.d(TAG, "getPrefs()")
-        prefsDao.get()
+        runCatching { prefsDao.get() }
+            .onFailure { Log.e(TAG, "getPrefs: DB read failed", it) }
+            .getOrNull()
     }
 
     suspend fun savePrefs(prefs: CurrencyPrefsEntity) = withContext(ioDispatcher) {
-        Log.d(TAG, "savePrefs(prefs=$prefs)")
-        prefsDao.upsert(prefs)
+        runCatching { prefsDao.upsert(prefs) }
+            .onFailure { Log.e(TAG, "savePrefs: DB upsert failed", it) }
     }
 }
