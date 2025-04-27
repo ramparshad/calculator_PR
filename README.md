@@ -38,10 +38,7 @@ An elegant, Android-native calculator and currency converter app, built with **J
 
 ## 🚧 To-Do
 
-- 🔧 **Unit Converter Features: https://github.com/metzger100/calculator/issues/11**  
-  Finalize and polish the Unit Converter tab, including support for more units (e.g., temperature, weight, distance, etc.) and expanding the scope (e.g., missing units, unit categories).
-
-- ✅ **Verification: https://github.com/metzger100/calculator/issues/12**  
+- ✅ **Verification**  
   Ensure functionality of all features, particularly the accuracy of conversions (especially unit conversion constants).
 
 - 🎨 **Calculator Branding: https://github.com/metzger100/calculator/issues/5**  
