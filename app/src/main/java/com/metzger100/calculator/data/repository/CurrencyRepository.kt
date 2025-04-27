@@ -27,14 +27,14 @@ class CurrencyRepository @Inject constructor(
     private val listDao: CurrencyListDao,
     private val prefsDao: CurrencyPrefsDao,
     private val httpClient: HttpClient,
-    @IoDispatcher private val ioDispatcher: CoroutineDispatcher  // z.B. Dispatchers.IO
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
     private val gson = Gson()
 
-    private val TAG = "CurrencyRepository"  // Tag für das Loggen
+    private val TAG = "CurrencyRepository"
 
     /** Gibt eine Map von Währungscode → Kurs zurück (Basis = [base]). */
-    suspend fun getRates(base: String, forceRefresh: Boolean = false): Map<String, Double> = withContext(ioDispatcher) {
+    suspend fun getRates(base: String, forceRefresh: Boolean = false, isOnline: Boolean = true): Map<String, Double> = withContext(ioDispatcher) {
         val nowMillis    = System.currentTimeMillis()
         val nowUtcDate   = LocalDate.now(ZoneOffset.UTC)
         val nowUtcHour   = Instant.ofEpochMilli(nowMillis)
@@ -60,24 +60,29 @@ class CurrencyRepository @Inject constructor(
         Log.d(TAG, "getRates: Checking for update - forceRefresh=$forceRefresh, cachedEntityIsNull=${cachedEntity == null}, timeConditionMet=${nowUtcHour >= 2 && cachedApiDate != nowUtcDate}")
 
         val rawJson = if (shouldRefresh) {
-            try {
-                Log.d(TAG, "getRates: Attempting to fetch fresh rates for $base...")
-                val fresh = fetchRatesJson(base)
-                // Nur wenn Daten nicht leer sind, den Cache überschreiben
-                if (fresh != "{}") {
-                    Log.d(TAG, "getRates: Fresh data fetched successfully, updating cache.")
-                    rateDao.upsert(CurrencyRateEntity(base = base, json = fresh, timestamp = nowMillis))
-                    fresh
-                } else {
-                    Log.w(TAG, "getRates: Fresh data is empty, falling back to cache.")
+            if (isOnline) {
+                Log.d(TAG, "getRates: Trying to fetch rates: isOnline = $isOnline.")
+                try {
+                    Log.d(TAG, "getRates: Fetching fresh rates for base=$base from API...")
+                    val fresh = fetchRatesJson(base)
+                    if (fresh != "{}") {
+                        Log.d(TAG, "getRates: Database updated with fresh data for base: $base.")
+                        rateDao.upsert(CurrencyRateEntity(base = base, json = fresh, timestamp = nowMillis))
+                        fresh
+                    } else {
+                        Log.w(TAG, "getRates: Fresh data empty, falling back to cache.")
+                        cachedEntity?.json ?: "{}"
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "getRates: Error fetching rates: ${e.localizedMessage}, falling back to cache.")
                     cachedEntity?.json ?: "{}"
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "getRates: Error fetching fresh rates: ${e.localizedMessage}")
+            } else {
+                Log.w(TAG, "getRates: Should refresh but offline -> using cached data.")
                 cachedEntity?.json ?: "{}"
             }
         } else {
-            Log.d(TAG, "getRates: Using cached data.")
+            Log.d(TAG, "getRates: Using cached rates.")
             cachedEntity?.json ?: "{}"
         }
 
@@ -159,7 +164,7 @@ class CurrencyRepository @Inject constructor(
         return "{}"
     }
 
-    suspend fun getCurrencies(forceRefresh: Boolean = false): List<Pair<String, String>> =
+    suspend fun getCurrencies(forceRefresh: Boolean = false, isOnline: Boolean = true): List<Pair<String, String>> =
         withContext(ioDispatcher) {
             val nowMillis   = System.currentTimeMillis()
             val nowUtcDate  = LocalDate.now(ZoneOffset.UTC)
@@ -183,19 +188,25 @@ class CurrencyRepository @Inject constructor(
             Log.d(TAG, "getCurrencies: Checking for update - forceRefresh=$forceRefresh, cachedEntityIsNull=${cachedEntity == null}, timeConditionMet=${nowUtcHour >= 2 && cacheDateUtc != nowUtcDate}")
 
             val rawJson = if (shouldRefresh) {
-                try {
-                    Log.d(TAG, "getCurrencies: Fetching fresh currency list...")
-                    val freshJson = fetchCurrenciesJson()
-                    if (freshJson != "{}") {
-                        Log.d(TAG, "getCurrencies: Successfully fetched fresh list, updating cache.")
-                        listDao.upsert(CurrencyListEntity(json = freshJson, timestamp = nowMillis))
-                        freshJson
-                    } else {
-                        Log.w(TAG, "getCurrencies: Received empty JSON, falling back to cache.")
+                if (isOnline) {
+                    Log.d(TAG, "getCurrencies: Trying to fetch currencies: isOnline = $isOnline.")
+                    try {
+                        Log.d(TAG, "getCurrencies: Fetching fresh currency list from API...")
+                        val freshJson = fetchCurrenciesJson()
+                        if (freshJson != "{}") {
+                            Log.d(TAG, "getCurrencies: Database updated with fresh data for base.")
+                            listDao.upsert(CurrencyListEntity(json = freshJson, timestamp = nowMillis))
+                            freshJson
+                        } else {
+                            Log.w(TAG, "getCurrencies: Received empty JSON, falling back to cache.")
+                            cachedEntity?.json ?: "{}"
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "getCurrencies: Error fetching list: ${e.localizedMessage}, falling back to cache.")
                         cachedEntity?.json ?: "{}"
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "getCurrencies: Error fetching list: ${e.localizedMessage}")
+                } else {
+                    Log.w(TAG, "getCurrencies: Should refresh but offline -> using cached data.")
                     cachedEntity?.json ?: "{}"
                 }
             } else {

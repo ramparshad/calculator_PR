@@ -7,18 +7,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.metzger100.calculator.data.ConnectivityObserver
 import com.metzger100.calculator.data.repository.CurrencyRepository
 import com.metzger100.calculator.data.local.entity.CurrencyPrefsEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.util.Locale
 
 @HiltViewModel
 class CurrencyViewModel @Inject constructor(
-    private val repo: CurrencyRepository
+    private val repo: CurrencyRepository,
+    private val connectivityObserver: ConnectivityObserver
 ) : ViewModel() {
+
+    // Zustand für Ladestatus
+    var isLoading by mutableStateOf(true)
+        private set
 
     // expose UI state
     var currency1 by mutableStateOf("USD"); private set
@@ -40,8 +47,9 @@ class CurrencyViewModel @Inject constructor(
     val lastApiDate: State<LocalDate?> = _lastApiDate
 
     init {
+        isLoading = true
         viewModelScope.launch {
-            // load persisted prefs if any
+            val isOnline = connectivityObserver.isOnline()
             repo.getPrefs()?.let { p ->
                 selectedField = p.activeField
                 currency1     = p.currency1
@@ -49,11 +57,53 @@ class CurrencyViewModel @Inject constructor(
                 value1        = p.amount1
                 value2        = p.amount2
             }
-            // Lade Währungen und deren Titel
-            _currenciesWithTitles.value = repo.getCurrencies()
-            // Lade Kurse für die Standard-Base
-            _rates.value = repo.getRates(_base.value)
-            _lastApiDate.value = repo.getLastApiDateForBase(_base.value)
+
+            val currenciesDeferred = async { repo.getCurrencies(isOnline = isOnline) }
+            val ratesDeferred = async { repo.getRates(_base.value, isOnline = isOnline) }
+            val lastApiDateDeferred = async { repo.getLastApiDateForBase(_base.value) }
+
+            _currenciesWithTitles.value = currenciesDeferred.await()
+            _rates.value = ratesDeferred.await()
+            _lastApiDate.value = lastApiDateDeferred.await()
+
+            isLoading = false
+            recalc()
+        }
+    }
+
+    fun refreshData() {
+        isLoading = true
+        viewModelScope.launch {
+            val isOnline = connectivityObserver.isOnline()
+
+            val currenciesDeferred = async { repo.getCurrencies(isOnline = isOnline) }
+            val ratesDeferred = async { repo.getRates(_base.value, isOnline = isOnline) }
+            val lastApiDateDeferred = async { repo.getLastApiDateForBase(_base.value) }
+
+            _currenciesWithTitles.value = currenciesDeferred.await()
+            _rates.value = ratesDeferred.await()
+            _lastApiDate.value = lastApiDateDeferred.await()
+
+            isLoading = false
+            recalc()
+        }
+    }
+
+    fun forceRefreshData() {
+        isLoading = true
+        viewModelScope.launch {
+            val isOnline = connectivityObserver.isOnline()
+
+            val currenciesDeferred = async { repo.getCurrencies(forceRefresh = true, isOnline = isOnline) }
+            val ratesDeferred = async { repo.getRates(_base.value, forceRefresh = true, isOnline = isOnline) }
+            val lastApiDateDeferred = async { repo.getLastApiDateForBase(_base.value) }
+
+            _currenciesWithTitles.value = currenciesDeferred.await()
+            _rates.value = ratesDeferred.await()
+            _lastApiDate.value = lastApiDateDeferred.await()
+
+            isLoading = false
+            recalc()
         }
     }
 
@@ -112,24 +162,6 @@ class CurrencyViewModel @Inject constructor(
             } else {
                 value1 = convert(value2, currency2, currency1)
             }
-        }
-    }
-
-
-    fun refreshData() {
-        viewModelScope.launch {
-            _currenciesWithTitles.value = repo.getCurrencies()
-            _rates.value = repo.getRates(_base.value)
-            _lastApiDate.value = repo.getLastApiDateForBase(_base.value)
-        }
-    }
-
-    fun forceRefreshData(newBase: String) {
-        _base.value = newBase
-        viewModelScope.launch {
-            _currenciesWithTitles.value = repo.getCurrencies(forceRefresh = true)
-            _rates.value = repo.getRates(newBase, forceRefresh = true)
-            _lastApiDate.value = repo.getLastApiDateForBase(newBase)
         }
     }
 

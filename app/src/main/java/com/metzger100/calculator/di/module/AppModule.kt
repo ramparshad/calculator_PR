@@ -1,7 +1,9 @@
 package com.metzger100.calculator.di.module
 
 import android.app.Application
+import android.content.Context
 import androidx.room.Room
+import com.metzger100.calculator.data.ConnectivityObserver
 import com.metzger100.calculator.data.repository.CalculationRepository
 import com.metzger100.calculator.data.local.database.CalculatorDatabase
 import com.metzger100.calculator.data.local.dao.CalculationDao
@@ -13,6 +15,7 @@ import com.metzger100.calculator.di.IoDispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -65,4 +68,10 @@ object AppModule {
     @Provides
     fun provideCurrencyPrefsDao(db: CalculatorDatabase): CurrencyPrefsDao =
         db.currencyPrefsDao()
+
+    @Provides
+    @Singleton
+    fun provideConnectivityObserver(
+        @ApplicationContext context: Context
+    ): ConnectivityObserver = ConnectivityObserver(context)
 }
