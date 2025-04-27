@@ -352,6 +352,7 @@ class CurrencyRepository @Inject constructor(
      * das "date"-Feld und gibt es als LocalDate zurück (oder null).
      */
     suspend fun getLastApiDateForBase(base: String): LocalDate? = withContext(ioDispatcher) {
+        Log.d(TAG, "getLastApiDateForBase: loading cache for base=$base")
         val rawJson = runCatching { rateDao.get(base)?.json }
             .onFailure { Log.e(TAG, "getLastApiDateForBase: DB read failed", it) }
             .getOrNull()
@@ -372,12 +373,14 @@ class CurrencyRepository @Inject constructor(
     // ----------------------------------------
 
     suspend fun getPrefs(): CurrencyPrefsEntity? = withContext(ioDispatcher) {
+        Log.d(TAG, "getPrefs()")
         runCatching { prefsDao.get() }
             .onFailure { Log.e(TAG, "getPrefs: DB read failed", it) }
             .getOrNull()
     }
 
     suspend fun savePrefs(prefs: CurrencyPrefsEntity) = withContext(ioDispatcher) {
+        Log.d(TAG, "savePrefs(prefs=$prefs)")
         runCatching { prefsDao.upsert(prefs) }
             .onFailure { Log.e(TAG, "savePrefs: DB upsert failed", it) }
     }
