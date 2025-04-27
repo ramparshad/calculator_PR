@@ -34,14 +34,14 @@ An elegant, Android-native calculator and currency converter app, built with **J
 
 ## 🚧 To-Do
 
-- 🔧 **Unit Converter Features**  
-  Finalize and polish the Unit Converter tab, including support for more units (e.g., temperature, weight, distance, etc.).
+- 🔧 **Unit Converter Features: https://github.com/metzger100/calculator/issues/11**  
+  Finalize and polish the Unit Converter tab, including support for more units (e.g., temperature, weight, distance, etc.) and expanding the scope (e.g., missing units, unit categories).
 
-- ✅ **Verification**  
+- ✅ **Verification: https://github.com/metzger100/calculator/issues/12**  
   Ensure functionality of all features, particularly the accuracy of conversions (especially unit conversion constants).
 
-- ⚙️ **Smaller Optimizations**  
-  Focus on UX improvements, performance optimizations, and expanding the scope (e.g., missing units, unit categories).
+- 🎨 **Calculator Branding: https://github.com/metzger100/calculator/issues/5**  
+  Design and finalize the calculator icon and overall branding for the app, ensuring it aligns with the app’s aesthetic and provides a consistent visual identity.
 
 ---
 
@@ -97,9 +97,10 @@ com.metzger100.calculator
 │   │   │   └── CurrencyRateEntity.kt
 │   │   └── database            # Room database & DAO interfaces
 │   │       └── CalculatorDatabase.kt
-│   └── repository              # Repository classes handling data sources
-│       ├── CalculatorRepository.kt
-│       └── CurrencyRepository.kt
+│   ├── repository              # Repository classes handling data sources
+│   │   ├── CalculatorRepository.kt
+│   │   └── CurrencyRepository.kt
+│   └── ConnectivityObserver.kt
 │
 ├── di                          # Dependency Injection (Hilt) - Modules & Qualifiers
 │   ├── modules                 # DI modules
