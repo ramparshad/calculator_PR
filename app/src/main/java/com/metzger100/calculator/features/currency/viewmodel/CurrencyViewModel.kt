@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -34,7 +35,7 @@ class CurrencyViewModel @Inject constructor(
     // UI state
     var currency1 by mutableStateOf("USD"); private set
     var currency2 by mutableStateOf("EUR"); private set
-    var selectedField by mutableStateOf(1); private set
+    var selectedField by mutableIntStateOf(1); private set
     var value1 by mutableStateOf(""); private set
     var value2 by mutableStateOf(""); private set
 
@@ -240,7 +241,7 @@ class CurrencyViewModel @Inject constructor(
         val normalized = amount.replace(',', '.')
         val a = normalized.toDoubleOrNull()
         if (a == null) {
-            Log.w(TAG, "convert: '$amount' ist keine Zahl")
+            Log.w(TAG, "convert: '$amount' not a number")
             return "0.00"
         }
 
@@ -249,7 +250,7 @@ class CurrencyViewModel @Inject constructor(
         val fromRate = map[from.lowercase()]
         val toRate   = map[to.lowercase()]
         if (fromRate == null || toRate == null) {
-            Log.w(TAG, "convert: fehlender Kurs (fromRate=$fromRate, toRate=$toRate)")
+            Log.w(TAG, "convert: rate not available (fromRate=$fromRate, toRate=$toRate)")
             return "0.00"
         }
 

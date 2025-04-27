@@ -19,7 +19,7 @@ class UnitConverterViewModel(
         UnitConverterConstants.units[category] ?: emptyList()
 
     // State
-    var selectedField by mutableStateOf(1)
+    var selectedField by mutableIntStateOf(1)
     var fromUnit by mutableStateOf(availableUnits[0])
     var toUnit   by mutableStateOf(availableUnits[1])
     var fromValue by mutableStateOf("")

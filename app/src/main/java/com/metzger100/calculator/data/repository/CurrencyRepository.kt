@@ -59,7 +59,7 @@ class CurrencyRepository @Inject constructor(
         val cachedJson = cachedEntity?.json
         val cachedRates = if (cachedJson != null) {
             parseRates(cachedJson, base).also {
-                Log.d(TAG, "getRatesFlow: Emit cached rates (${it.size} Entries)")
+                Log.d(TAG, "getRatesFlow: Emit cached rates (${it.size} entries)")
             }
         } else {
             Log.d(TAG, "getRatesFlow: No cache available → emit emptyMap()")
@@ -83,7 +83,7 @@ class CurrencyRepository @Inject constructor(
                     Log.d(TAG, "getRatesFlow: Online → start fetchRatesJson()")
                     val fresh = fetchRatesJson(base)
                     if (fresh.isNotBlank() && fresh != "{}") {
-                        Log.d(TAG, "getRatesFlow: Received fresh data (${fresh.length} Character), upserting…")
+                        Log.d(TAG, "getRatesFlow: Received fresh data (${fresh.length} characters), upserting…")
                         runCatching {
                             rateDao.upsert(CurrencyRateEntity(base, fresh, System.currentTimeMillis()))
                         }.onFailure {
