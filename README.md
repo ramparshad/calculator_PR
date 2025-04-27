@@ -12,6 +12,10 @@ An elegant, Android-native calculator and currency converter app, built with **J
 - 💱 **Currency Converter**  
   Converts between currencies using real-time exchange rates (data fetched from a free public API).
 
+  ⚠️ Note:  
+  Exchange rates are updated only once per day (02:00 UTC).  
+  All conversions are based on USD as an intermediate currency, which may cause minor rounding differences for certain pairs.
+
 - 🧳 **Unit Converter Tab**  
   Convert between various units such as length, weight, temperature, and more with optimized keypads and a clear interface.
 
