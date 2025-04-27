@@ -43,6 +43,9 @@ An elegant, Android-native calculator and currency converter app, built with **J
 - ⚙️ **Smaller Optimizations**  
   Focus on UX improvements, performance optimizations, and expanding the scope (e.g., missing units, unit categories).
 
+- 🎨 **Calculator Branding**  
+  Design and finalize the calculator icon and overall branding for the app, ensuring it aligns with the app’s aesthetic and provides a consistent visual identity.
+
 ---
 
 ## 🛠️ Tech Stack
