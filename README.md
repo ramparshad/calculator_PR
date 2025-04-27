@@ -97,9 +97,10 @@ com.metzger100.calculator
 │   │   │   └── CurrencyRateEntity.kt
 │   │   └── database            # Room database & DAO interfaces
 │   │       └── CalculatorDatabase.kt
-│   └── repository              # Repository classes handling data sources
-│       ├── CalculatorRepository.kt
-│       └── CurrencyRepository.kt
+│   ├── repository              # Repository classes handling data sources
+│   │   ├── CalculatorRepository.kt
+│   │   └── CurrencyRepository.kt
+│   └── ConnectivityObserver.kt
 │
 ├── di                          # Dependency Injection (Hilt) - Modules & Qualifiers
 │   ├── modules                 # DI modules
