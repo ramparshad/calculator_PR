@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.CurrencyConverterConstants.MajorCurrencyCodes
+import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -152,46 +153,53 @@ fun ExchangeRateInfo(
     lastApiDate: LocalDate?,
     modifier: Modifier = Modifier
 ) {
+    // 1) Erzeuge einen Clock-State, der sich z.B. jede Minute aktualisiert
+    val nowUtc by produceState(initialValue = Instant.now()) {
+        while (true) {
+            value = Instant.now()
+            delay(60_000L) // 1 Minute Pause – alle 60 Sekunden neu recomposen
+        }
+    }
+
+    // 2) Berechne Datum und Schwelle aus unserem live-Timestamp
+    val nowUtcOffset = nowUtc.atOffset(ZoneOffset.UTC)
+    val todayUtc     = nowUtcOffset.toLocalDate()
+    val threshold    = todayUtc
+        .atTime(2, 0)
+        .atOffset(ZoneOffset.UTC)
+        .toInstant()
+
     Column(
         modifier = modifier.padding(bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val nowUtc    = Instant.now().atOffset(ZoneOffset.UTC)
-        val todayUtc  = nowUtc.toLocalDate()
-        val threshold = todayUtc
-            .atTime(2, 0)
-            .atOffset(ZoneOffset.UTC)
-            .toInstant()
-
-        // 1) exchange_rates_as_of
+        // Anzeige “as of”
         if (lastApiDate == null) {
             Text(
-                text = stringResource(id = R.string.no_data_available),
+                text = stringResource(R.string.no_data_available),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error
             )
         } else {
             Text(
-                text = stringResource(id = R.string.exchange_rates_as_of) + " " +
+                text = stringResource(R.string.exchange_rates_as_of) + " " +
                         lastApiDate.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(Modifier.height(4.dp))
 
-        // 2) next update / pending
-        if (lastApiDate == null || (nowUtc.toInstant() >= threshold && lastApiDate.isBefore(todayUtc))) {
-            // kein Cache ODER nach 02:00 UTC und API-Datum < heute
+        // Anzeige “update_due” oder “next update” – jetzt getriggert von unserem Clock-State
+        if (lastApiDate == null || (nowUtc >= threshold && lastApiDate.isBefore(todayUtc))) {
             Text(
-                text = stringResource(id = R.string.update_due),
+                text = stringResource(R.string.update_due),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         } else {
-            // normales nächste Update-Datum in lokaler Zeit
-            val nextDateUtc = if (nowUtc.hour < 2) todayUtc else todayUtc.plusDays(1)
+            val nextDateUtc = if (nowUtcOffset.hour < 2) todayUtc else todayUtc.plusDays(1)
             val nextUtcInst = nextDateUtc
                 .atTime(2, 0)
                 .atOffset(ZoneOffset.UTC)
@@ -202,7 +210,7 @@ fun ExchangeRateInfo(
                 .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
 
             Text(
-                text = stringResource(id = R.string.next_rates_update) + " " + nextLocal,
+                text = stringResource(R.string.next_rates_update) + " " + nextLocal,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
@@ -210,7 +218,6 @@ fun ExchangeRateInfo(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CurrencyRow(
     currency: String,
