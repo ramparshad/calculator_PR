@@ -1,6 +1,7 @@
 package com.metzger100.calculator.features.calculator.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -100,8 +101,18 @@ class CalculatorViewModel @Inject constructor(
 
     fun calculate() {
         try {
+            Log.d("CalculatorViewModel", "Starting calculation for input: $input")
+
+            if (!validateFactorials(input)) {
+                previewResult = application.getString(R.string.Calculator_Error)
+                Log.d("CalculatorViewModel", "Factorial validation failed for input: $input")
+                return
+            }
+
+            Log.d("CalculatorViewModel", "Valid input, evaluating expression...")
+
             val expression = BigMathExpression(input)
-            val result    = expression.evaluate().numberValue
+            val result = expression.evaluate().numberValue
 
             if (result != null) {
                 val resultString = BigDecimal(result.toString())
@@ -115,29 +126,92 @@ class CalculatorViewModel @Inject constructor(
 
                 input = resultString
                 previewResult = ""
+                Log.d("CalculatorViewModel", "Calculation successful, result: $resultString")
             } else {
                 input = "0"
                 previewResult = ""
+                Log.d("CalculatorViewModel", "Result is null, input set to 0")
             }
         } catch (e: Exception) {
             previewResult = application.getString(R.string.Calculator_Error)
+            Log.e("CalculatorViewModel", "Error during calculation", e)
         }
     }
 
     private fun updatePreviewResult() {
         if (input.isBlank()) {
             previewResult = ""
+            Log.d("CalculatorViewModel", "Input is blank, preview result cleared.")
             return
         }
+
+        Log.d("CalculatorViewModel", "Updating preview result for input: $input")
+
+        if (!validateFactorials(input)) {
+            previewResult = application.getString(R.string.Calculator_Error)
+            Log.d("CalculatorViewModel", "Factorial validation failed for input: $input")
+            return
+        }
+
         try {
             val expression = BigMathExpression(input)
             previewResult = expression.evaluate().numberValue
                 ?.toString()
                 ?: ""
             previewResult = formatResult(previewResult)
+            Log.d("CalculatorViewModel", "Preview result updated: $previewResult")
         } catch (e: Exception) {
             previewResult = application.getString(R.string.Calculator_Error)
+            Log.e("CalculatorViewModel", "Error updating preview result", e)
         }
+    }
+
+    private fun validateFactorials(expression: String): Boolean {
+        Log.d("CalculatorViewModel", "Validating factorials in expression: $expression")
+        var expr = expression
+        while (true) {
+            val factIndex = expr.indexOf("FACT(")
+            if (factIndex == -1) break
+
+            var openBrackets = 1
+            var closeIndex = factIndex + 5
+            while (closeIndex < expr.length && openBrackets > 0) {
+                when (expr[closeIndex]) {
+                    '(' -> openBrackets++
+                    ')' -> openBrackets--
+                }
+                closeIndex++
+            }
+
+            if (openBrackets != 0) {
+                Log.d("CalculatorViewModel", "Mismatched brackets in expression: $expr")
+                return false
+            }
+
+            val innerExpression = expr.substring(factIndex + 5, closeIndex - 1)
+            Log.d("CalculatorViewModel", "Found inner expression for FACT: $innerExpression")
+
+            if (!validateFactorials(innerExpression)) {
+                Log.d("CalculatorViewModel", "Nested factorial validation failed for inner expression: $innerExpression")
+                return false
+            }
+
+            try {
+                val evalResult = BigMathExpression(innerExpression).evaluate().numberValue
+                if (evalResult == null || evalResult < BigDecimal.ZERO || evalResult.stripTrailingZeros().scale() > 0) {
+                    Log.d("CalculatorViewModel", "Invalid factorial argument: $innerExpression, result: $evalResult")
+                    return false
+                }
+            } catch (e: Exception) {
+                Log.e("CalculatorViewModel", "Error evaluating factorial argument: $innerExpression", e)
+                return false
+            }
+
+            expr = expr.substring(0, factIndex) + expr.substring(closeIndex)
+            Log.d("CalculatorViewModel", "Continuing validation with remaining expression: $expr")
+        }
+        Log.d("CalculatorViewModel", "Factorial validation passed for expression: $expression")
+        return true
     }
 
     private fun convertTrigFunctions(expression: String): String {
