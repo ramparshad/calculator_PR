@@ -42,15 +42,13 @@ class CurrencyRepository @Inject constructor(
      * 3) nach erfolgreichem Upsert erneut emittet.
      *
      * @param base der ISO-Code der Basiswährung (z.B. "USD")
-     * @param forceRefresh erzwingt immer ein Refetch
      * @param isOnline aktueller Netzwerkstatus
      */
     fun getRatesFlow(
         base: String,
-        forceRefresh: Boolean = false,
         isOnline: Boolean = true
     ): Flow<Map<String, Double>> = flow {
-        Log.d(TAG, "getRatesFlow(base=$base, forceRefresh=$forceRefresh, isOnline=$isOnline) START")
+        Log.d(TAG, "getRatesFlow(base=$base, isOnline=$isOnline) START")
 
         // 1) Cache auslesen und emitten
         val cachedEntity = runCatching { rateDao.get(base) }
@@ -70,11 +68,10 @@ class CurrencyRepository @Inject constructor(
         // 2) Refresh-Entscheidung
         val nowUtc = Instant.now().atOffset(ZoneOffset.UTC)
         val cachedDate = cachedJson?.let { extractDate(it) }
-        val shouldRefresh = forceRefresh
-                || cachedJson == null
+        val shouldRefresh = cachedJson == null
                 || (nowUtc.hour >= 2 && cachedDate != nowUtc.toLocalDate())
 
-        Log.d(TAG, "getRatesFlow: shouldRefresh=$shouldRefresh (cachedDate=$cachedDate, nowUtcHour=${nowUtc.hour})")
+        Log.d(TAG, "getRatesFlow: shouldRefresh=$shouldRefresh (cache=${cachedJson == null}, date=${(nowUtc.hour >= 2 && cachedDate != nowUtc.toLocalDate())})")
 
         if (shouldRefresh) {
             // 3) Netzwerk-Fetch (+ Upsert)
@@ -129,10 +126,9 @@ class CurrencyRepository @Inject constructor(
      * 3) nach erfolgreichem Upsert erneut emittet.
      */
     fun getCurrenciesFlow(
-        forceRefresh: Boolean = false,
         isOnline: Boolean = true
     ): Flow<List<Pair<String, String>>> = flow {
-        Log.d(TAG, "getCurrenciesFlow(forceRefresh=$forceRefresh, isOnline=$isOnline) START")
+        Log.d(TAG, "getCurrenciesFlow(isOnline=$isOnline) START")
 
         // 1) Cache
         val cachedEntity = runCatching { listDao.get() }
@@ -154,11 +150,10 @@ class CurrencyRepository @Inject constructor(
         val cacheDate = cachedEntity
             ?.timestamp
             ?.let { Instant.ofEpochMilli(it).atOffset(ZoneOffset.UTC).toLocalDate() }
-        val shouldRefresh = forceRefresh
-                || cachedEntity == null
+        val shouldRefresh = cachedEntity == null
                 || (nowUtc.hour >= 2 && cacheDate != nowUtc.toLocalDate())
 
-        Log.d(TAG, "getCurrenciesFlow: shouldRefresh=$shouldRefresh (cacheDate=$cacheDate, nowUtcHour=${nowUtc.hour})")
+        Log.d(TAG, "getCurrenciesFlow: shouldRefresh=$shouldRefresh (cache=${cachedEntity == null}, date=${(nowUtc.hour >= 2 && cacheDate != nowUtc.toLocalDate())})")
 
         if (shouldRefresh) {
             // 3) Fetch & Upsert

@@ -70,7 +70,7 @@ class CurrencyViewModel @Inject constructor(
 
             // 3) Currencies: Cache → Network
             Log.d(TAG, "init: subscribing to currenciesFlow")
-            repo.getCurrenciesFlow(forceRefresh = false, isOnline = online)
+            repo.getCurrenciesFlow(isOnline = online)
                 .onEach { list ->
                     Log.d(TAG, "currenciesFlow: emit ${list.size} entries")
                     _currenciesWithTitles.value = list
@@ -82,7 +82,7 @@ class CurrencyViewModel @Inject constructor(
 
             // 4) Rates: Cache → Network
             Log.d(TAG, "init: subscribing to ratesFlow(base=${_base.value})")
-            repo.getRatesFlow(base.value, forceRefresh = false, isOnline = online)
+            repo.getRatesFlow(base.value, isOnline = online)
                 .onEach { map ->
                     Log.d(TAG, "ratesFlow: emit ${map.size} entries")
                     _rates.value = map
@@ -112,7 +112,7 @@ class CurrencyViewModel @Inject constructor(
             val online = connectivityObserver.isOnline()
             Log.d(TAG, "refreshData: connectivity = $online")
 
-            repo.getCurrenciesFlow(forceRefresh = false, isOnline = online)
+            repo.getCurrenciesFlow(isOnline = online)
                 .onEach { list ->
                     Log.d(TAG, "refreshData → currenciesFlow: emit ${list.size} entries")
                     _currenciesWithTitles.value = list
@@ -120,7 +120,7 @@ class CurrencyViewModel @Inject constructor(
                 .catch { e -> Log.e(TAG, "refreshData → currenciesFlow error", e) }
                 .launchIn(this)
 
-            repo.getRatesFlow(base.value, forceRefresh = false, isOnline = online)
+            repo.getRatesFlow(base.value, isOnline = online)
                 .onEach { map ->
                     Log.d(TAG, "refreshData → ratesFlow: emit ${map.size} entries")
                     _rates.value = map
@@ -136,40 +136,6 @@ class CurrencyViewModel @Inject constructor(
                 .launchIn(this)
 
             Log.d(TAG, "refreshData: END")
-        }
-    }
-
-    /** Forciertes Nachladen (network-first). */
-    fun forceRefreshData() {
-        viewModelScope.launch {
-            Log.d(TAG, "forceRefreshData: START")
-            val online = connectivityObserver.isOnline()
-            Log.d(TAG, "forceRefreshData: connectivity = $online")
-
-            repo.getCurrenciesFlow(forceRefresh = true, isOnline = online)
-                .onEach { list ->
-                    Log.d(TAG, "forceRefresh → currenciesFlow: emit ${list.size} entries")
-                    _currenciesWithTitles.value = list
-                }
-                .catch { e -> Log.e(TAG, "forceRefresh → currenciesFlow error", e) }
-                .launchIn(this)
-
-            repo.getRatesFlow(base.value, forceRefresh = true, isOnline = online)
-                .onEach { map ->
-                    Log.d(TAG, "forceRefresh → ratesFlow: emit ${map.size} entries")
-                    _rates.value = map
-
-                    val date = repo.getLastApiDateForBase(base.value)
-                    _lastApiDate.value = date
-                    Log.d(TAG, "forceRefresh → lastApiDate = $date")
-
-                    recalc()
-                    Log.d(TAG, "forceRefresh → recalc done, value1=$value1, value2=$value2")
-                }
-                .catch { e -> Log.e(TAG, "forceRefresh → ratesFlow error", e) }
-                .launchIn(this)
-
-            Log.d(TAG, "forceRefreshData: END")
         }
     }
 

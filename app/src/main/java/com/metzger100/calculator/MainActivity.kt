@@ -75,7 +75,7 @@ fun AppContent() {
                     showBackButton = showBack,
                     onBackClick    = { navController.navigateUp() },
                     onClearHistory = CalcViewModel::clearHistory,
-                    onRefreshRates = { CurViewModel.forceRefreshData() }
+                    onRefreshRates = { CurViewModel.refreshData() }
                 )
             },
             bottomBar = {
