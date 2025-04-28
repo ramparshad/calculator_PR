@@ -78,7 +78,7 @@ class CalculatorViewModel @Inject constructor(
             "SINR(", "COSR(", "TANR(",
             "SIN(", "COS(", "TAN(",
             "SQRT(", "FACT(", "LOG10(", "LOG(",
-            "1/(", "PI"
+            "RECIPROCAL(","EXP(","PI()","E()"
         )
         val match = tokens.firstOrNull { input.uppercase().endsWith(it) }
         input = if (match != null) input.dropLast(match.length) else input.dropLast(1)
@@ -100,17 +100,13 @@ class CalculatorViewModel @Inject constructor(
 
     fun calculate() {
         try {
-            val finalInput = if (isDegreeMode) {
-                convertToRadians(input)
-            } else {
-                input
-            }
-
-            val expression = BigMathExpression(finalInput)
-            val result = expression.evaluate().numberValue
+            val expression = BigMathExpression(input)
+            val result    = expression.evaluate().numberValue
 
             if (result != null) {
-                val resultString = BigDecimal(result.toString()).stripTrailingZeros().toPlainString()
+                val resultString = BigDecimal(result.toString())
+                    .stripTrailingZeros()
+                    .toPlainString()
 
                 viewModelScope.launch {
                     repository.insert(input, resultString)
@@ -123,7 +119,6 @@ class CalculatorViewModel @Inject constructor(
                 input = "0"
                 previewResult = ""
             }
-
         } catch (e: Exception) {
             previewResult = application.getString(R.string.Calculator_Error)
         }
@@ -134,16 +129,11 @@ class CalculatorViewModel @Inject constructor(
             previewResult = ""
             return
         }
-
         try {
-            val finalInput = if (isDegreeMode) {
-                convertToRadians(input)
-            } else {
-                input
-            }
-
-            val expression = BigMathExpression(finalInput)
-            previewResult = expression.evaluate().numberValue?.toString() ?: ""
+            val expression = BigMathExpression(input)
+            previewResult = expression.evaluate().numberValue
+                ?.toString()
+                ?: ""
             previewResult = formatResult(previewResult)
         } catch (e: Exception) {
             previewResult = application.getString(R.string.Calculator_Error)
@@ -166,17 +156,6 @@ class CalculatorViewModel @Inject constructor(
                 .replace("ACOS\\(".toRegex(), "ACOSR(")
                 .replace("ATAN\\(".toRegex(), "ATANR(")
         }
-    }
-
-    private fun convertToRadians(expression: String): String {
-        if (isDegreeMode) {
-            return expression.replace(Regex("(SIN|COS|TAN|ASIN|ACOS|ATAN)\\(([^)]+)\\)")) {
-                val trigValue = it.groupValues[2]
-                val radianValue = "SINR(${trigValue}*PI/180)"
-                it.value.replace(it.groupValues[0], radianValue)
-            }
-        }
-        return expression
     }
 
     private fun formatResult(result: String): String {

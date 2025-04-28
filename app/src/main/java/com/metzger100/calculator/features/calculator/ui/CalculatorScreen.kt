@@ -84,7 +84,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Input card
-            // Input card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -183,9 +182,11 @@ fun displayifyExpression(expr: String): String {
         .replace("/", "÷")
         .replace("*", "×")
         .replace("-", "−")
-        .replace("PI", "π")
+        .replace("RECIPROCAL(", "1/(")
+        .replace("EXP(", "e^(")
+        .replace("PI()", "π")
+        .replace("E()", "e")
         .replace("SQRT(", "√(")
-        .replace("1/(", "1/(")
         .replace("FACT(", "x!(")
         .replace("LOG10(", "lg(")
         .replace("LOG(", "ln(")
