@@ -35,8 +35,8 @@ object UnitConverterConstants {
             UnitDef(R.string.UnitConvCatLength_NauticalMile, 1_852.0),
             // Astronomical
             UnitDef(R.string.UnitConvCatLength_AstronomicalUnit, 1.495978707e11),
-            UnitDef(R.string.UnitConvCatLength_LightYear, 9.4607e15),
-            UnitDef(R.string.UnitConvCatLength_Parsec, 3.0857e16)
+            UnitDef(R.string.UnitConvCatLength_LightYear, 9.4607304725808e15),
+            UnitDef(R.string.UnitConvCatLength_Parsec, 3.085677581491367e16)
         ),
 
         // WEIGHT/MASS (metric then non-SI then imperial) (base = kilogram)
@@ -71,7 +71,7 @@ object UnitConverterConstants {
             UnitDef(R.string.UnitConvCatVolume_QuartUS, 0.946352946),
             UnitDef(R.string.UnitConvCatVolume_GallonUS, 3.785411784),
             // UK
-            UnitDef(R.string.UnitConvCatVolume_TeaspoonUK, 0.0059193880208333),
+            UnitDef(R.string.UnitConvCatVolume_TeaspoonUK, 0.005919388020833333),
             UnitDef(R.string.UnitConvCatVolume_TablespoonUK, 0.0177581640625),
             UnitDef(R.string.UnitConvCatVolume_FluidOunceUK, 0.0284130625),
             UnitDef(R.string.UnitConvCatVolume_PintUK, 0.56826125),
@@ -92,7 +92,7 @@ object UnitConverterConstants {
             UnitDef(R.string.UnitConvCatArea_SquareFoot, 0.09290304),
             UnitDef(R.string.UnitConvCatArea_SquareYard, 0.83612736),
             UnitDef(R.string.UnitConvCatArea_Acre, 4_046.8564224),
-            UnitDef(R.string.UnitConvCatArea_SquareMile, 2.589988e6)
+            UnitDef(R.string.UnitConvCatArea_SquareMile, 2.589988110336e6)
         ),
 
         // TEMPERATURE (Celsius/Kelvin then Fahrenheit/Rankine) (no base -> calculation in UnitConverterViewModel.convert())
@@ -121,10 +121,10 @@ object UnitConverterConstants {
         "Speed" to listOf(
             UnitDef(R.string.UnitConvCatSpeed_MeterPerSecond, 1.0),
             UnitDef(R.string.UnitConvCatSpeed_KilometerPerSecond, 1000.0),
-            UnitDef(R.string.UnitConvCatSpeed_KilometerPerHour, 0.27777777778),
+            UnitDef(R.string.UnitConvCatSpeed_KilometerPerHour, 0.2777777777777778),
             UnitDef(R.string.UnitConvCatSpeed_FootPerSecond, 0.3048),
             UnitDef(R.string.UnitConvCatSpeed_MilePerHour, 0.44704),
-            UnitDef(R.string.UnitConvCatSpeed_Knot, 0.51444444444),
+            UnitDef(R.string.UnitConvCatSpeed_Knot, 0.51444444444444),
             UnitDef(R.string.UnitConvCatSpeed_Mach, 340.29)
         ),
 
@@ -138,8 +138,8 @@ object UnitConverterConstants {
             UnitDef(R.string.UnitConvCatEnergy_Kilocalorie, 4_184.0),
             UnitDef(R.string.UnitConvCatEnergy_WattHour, 3_600.0),
             UnitDef(R.string.UnitConvCatEnergy_KilowattHour, 3_600_000.0),
-            UnitDef(R.string.UnitConvCatEnergy_FootPound, 1.355817948),
-            UnitDef(R.string.UnitConvCatEnergy_BTU, 1055.05585)
+            UnitDef(R.string.UnitConvCatEnergy_FootPound, 1.355817948331400),
+            UnitDef(R.string.UnitConvCatEnergy_BTU, 1055.05585262)
         ),
 
         // POWER (base = watt)
@@ -147,7 +147,7 @@ object UnitConverterConstants {
             UnitDef(R.string.UnitConvCatPower_Watt, 1.0),
             UnitDef(R.string.UnitConvCatPower_Kilowatt, 1_000.0),
             UnitDef(R.string.UnitConvCatPower_Megawatt, 1_000_000.0),
-            UnitDef(R.string.UnitConvCatPower_Horsepower, 745.699872),
+            UnitDef(R.string.UnitConvCatPower_Horsepower, 745.6998715822702),
             UnitDef(R.string.UnitConvCatPower_MetricHorsepower, 735.49875)
         ),
 
@@ -158,10 +158,10 @@ object UnitConverterConstants {
             UnitDef(R.string.UnitConvCatPressure_Millibar, 100.0),
             UnitDef(R.string.UnitConvCatPressure_Bar, 100_000.0),
             UnitDef(R.string.UnitConvCatPressure_Atmosphere, 101_325.0),
-            UnitDef(R.string.UnitConvCatPressure_Torr, 133.32236842105),
+            UnitDef(R.string.UnitConvCatPressure_Torr, 133.32236842105263),
             UnitDef(R.string.UnitConvCatPressure_MmHg, 133.322),
             UnitDef(R.string.UnitConvCatPressure_KgfPerCm2, 98_066.5),
-            UnitDef(R.string.UnitConvCatPressure_PSI, 6_894.757293168)
+            UnitDef(R.string.UnitConvCatPressure_PSI, 6894.7572931783)
         ),
 
         // FREQUENCY (base = hertz)
@@ -211,8 +211,8 @@ object UnitConverterConstants {
         // PLANE ANGLE (base = radian)
         "PlaneAngle" to listOf(
             UnitDef(R.string.UnitConvCatPlaneAngle_Radian, 1.0),
-            UnitDef(R.string.UnitConvCatPlaneAngle_Degree, 0.0174532925199433),
-            UnitDef(R.string.UnitConvCatPlaneAngle_Grad, 0.0157079632679489),
+            UnitDef(R.string.UnitConvCatPlaneAngle_Degree, 0.017453292519943295),
+            UnitDef(R.string.UnitConvCatPlaneAngle_Grad, 0.01570796326794896),
             UnitDef(R.string.UnitConvCatPlaneAngle_Arcminute, 0.0002908882086657216),
             UnitDef(R.string.UnitConvCatPlaneAngle_Arcsecond, 4.84813681109536e-6)
         ),
