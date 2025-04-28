@@ -29,9 +29,9 @@ fun ScientificKeyboard(
 
     val buttons = listOf(
         listOf("INV", if (isDegreeMode) "deg" else "rad", if (inverse) "sin⁻¹" else "sin", if (inverse) "cos⁻¹" else "cos", if (inverse) "tan⁻¹" else "tan"),
-        listOf("^", "lg", "ln", "(", ")"),
-        listOf("√", "C", "←", "%", "÷"),
-        listOf("x!", "7", "8", "9", "×"),
+        listOf("^", if (inverse) "10ˣ" else "lg", if (inverse) "eˣ" else "ln", "(", ")"),
+        listOf(if (inverse) "x²" else "√", "C", "←", "%", "÷"),
+        listOf("x!(", "7", "8", "9", "×"),
         listOf("1/x", "4", "5", "6", "−"),
         listOf("π", "1", "2", "3", "+"),
         listOf("⇄", "e", "0", ".", "=")
@@ -137,10 +137,13 @@ fun mapScientificSymbol(symbol: String, isDegreeMode: Boolean): String {
                 "π" -> "PI"
                 "^" -> "^"
                 "√" -> "SQRT("
+                "x²" -> "^2"
                 "1/x" -> "1/("
-                "x!" -> "FACT("
+                "x!(" -> "FACT("
                 "lg" -> "LOG10("
+                "10ˣ" -> "10^"
                 "ln" -> "LOG("
+                "eˣ" -> "e^"
                 "sin" -> "SIN("
                 "cos" -> "COS("
                 "tan" -> "TAN("
@@ -158,10 +161,13 @@ fun mapScientificSymbol(symbol: String, isDegreeMode: Boolean): String {
                 "π" -> "PI"
                 "^" -> "^"
                 "√" -> "SQRT("
+                "x²" -> "^2"
                 "1/x" -> "1/("
-                "x!" -> "FACT("
+                "x!(" -> "FACT("
                 "lg" -> "LOG10("
+                "10ˣ" -> "10^"
                 "ln" -> "LOG("
+                "eˣ" -> "e^"
                 "sin" -> "SINR("
                 "cos" -> "COSR("
                 "tan" -> "TANR("

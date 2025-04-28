@@ -134,7 +134,7 @@ fun isHighlightedButton(label: String): Boolean {
 
 fun isFadedButton(label: String): Boolean {
     return when (label) {
-        "INV", "deg", "sin⁻¹", "cos⁻¹", "tan⁻¹", "lg", "ln", "(", ")", "√", "x!", "1/x", "π", "e", "sin", "cos", "tan", "^" -> true
+        "INV", "deg", "sin⁻¹", "cos⁻¹", "tan⁻¹", "lg", "10ˣ", "ln", "eˣ", "(", ")", "√", "x²", "x!(", "1/x", "π", "e", "sin", "cos", "tan", "^" -> true
         else -> false
     }
 }
