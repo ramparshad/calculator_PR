@@ -39,7 +39,7 @@ An elegant, Android-native calculator and currency converter app, built with **J
 ## 🚧 To-Do
 
 - ✅ **Verification**  
-  Ensure functionality of all features, particularly the accuracy of conversions (especially unit conversion constants).
+  Ensure functionality of all features and the accuracy of conversions and calculations.
 
 - 🎨 **Calculator Branding: https://github.com/metzger100/calculator/issues/5**  
   Design and finalize the calculator icon and overall branding for the app, ensuring it aligns with the app’s aesthetic and provides a consistent visual identity.
