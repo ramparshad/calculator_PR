@@ -21,6 +21,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.features.unit.viewmodel.UnitConverterViewModel
 import com.metzger100.calculator.features.unit.ui.UnitConverterConstants.UnitDef
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import kotlin.math.abs
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -105,8 +108,15 @@ fun UnitRow(
                 fontSize = 18.sp,
                 modifier = Modifier.clickable { show = true })
             Spacer(Modifier.width(16.dp))
+
+            val displayText = if (isSel) {
+                value.ifEmpty { "0" }
+            } else {
+                formatForDisplay(value)
+            }
+
             Text(
-                text = value.ifEmpty { "0" },
+                text = displayText,
                 fontSize = if (isSel) 24.sp else 20.sp,
                 modifier = Modifier.weight(1f)
             )
@@ -182,3 +192,46 @@ fun UnitSelectorDialogRV(
 }
 
 private class UnitViewHolder(val textView: TextView) : RecyclerView.ViewHolder(textView)
+
+private fun formatForDisplay(input: String): String {
+    val v = input.toDoubleOrNull() ?: return input.ifEmpty { "0" }
+
+    // Sonderfall Null: zeige einfach "0"
+    if (v == 0.0) return "0"
+
+    val absV = abs(v)
+    val lowerThreshold = 1e-3
+    val upperThreshold = 1e9
+
+    return if (absV in lowerThreshold..upperThreshold) {
+        val symbols = DecimalFormatSymbols().apply {
+            groupingSeparator = ' '
+            decimalSeparator  = '.'
+        }
+        DecimalFormat("#,##0.#########", symbols).apply {
+            isGroupingUsed = true
+        }.format(v)
+    } else {
+        val symbolsE = DecimalFormatSymbols().apply {
+            decimalSeparator  = '.'
+            exponentSeparator = "E"
+        }
+        val sci = DecimalFormat("0.#########E0", symbolsE).format(v)
+        val (mantissa, expStr) = sci.split("E").let { it[0] to it.getOrElse(1) { "0" } }
+        val exponent = expStr.toIntOrNull() ?: 0
+        val sup = toSuperscript(exponent)
+        "$mantissa·10$sup"
+    }
+}
+
+/**
+ * Wandelt eine Ganzzahl in Unicode-Hochstellungs-Ziffern, z. B. -10 → ⁻¹⁰
+ */
+private fun toSuperscript(exp: Int): String {
+    val supDigits = mapOf(
+        '0' to '⁰', '1' to '¹', '2' to '²', '3' to '³', '4' to '⁴',
+        '5' to '⁵', '6' to '⁶', '7' to '⁷', '8' to '⁸', '9' to '⁹',
+        '-' to '⁻'
+    )
+    return exp.toString().map { supDigits[it] ?: it }.joinToString("")
+}
