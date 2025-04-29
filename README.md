@@ -152,7 +152,7 @@ com.metzger100.calculator
 
 ## 📄 License
 
---- Not Licensed yet ---
+GNU AFFERO GENERAL PUBLIC LICENSE Version 3
 
 ---
 
