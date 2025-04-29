@@ -1,5 +1,9 @@
 #  Material You Calculator
 
+<p align="center">
+  <img src="svg/logo.svg" alt="Calculator Logo" width="128" />
+</p>
+
 An elegant, Android-native calculator and currency converter app, built with **Jetpack Compose** and styled using **Material You** (Monet) theming. The app adapts dynamically to your system colors and offers a clean, modern experience for daily calculations and conversions.
 
 ---
