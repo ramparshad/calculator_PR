@@ -79,6 +79,8 @@ cd calculator
 
 Open the project in Android Studio, let Gradle sync, then click **Run**.
 
+⚠️ Note: You might have to switch to "Project Files"-View and exclude /svg to avoid errors with the code analysis
+
 ---
 
 ## 🗂️ Project Structure
