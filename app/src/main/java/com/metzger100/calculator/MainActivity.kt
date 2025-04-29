@@ -32,6 +32,7 @@ class MainApplication : Application()
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_Calculator)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setHighRefreshRate()

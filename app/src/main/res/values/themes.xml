@@ -2,4 +2,10 @@
 <resources>
 
     <style name="Theme.Calculator" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- NEU: Splash-Theme -->
+    <style name="Theme.Calculator.Splash" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Use our splash drawable as window background -->
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+    </style>
 </resources>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="splash_background">#E3F2FD</color>
     <!-- dunkles Blau (Strich, Icons) -->
     <color name="ic_logo_foreground_primary">#1565C0</color>  <!-- Blue 800 -->
 
