@@ -3,9 +3,9 @@
 
     <style name="Theme.Calculator" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <!-- NEU: Splash-Theme -->
-    <style name="Theme.Calculator.Splash" parent="android:Theme.Material.Light.NoActionBar">
-        <!-- Use our splash drawable as window background -->
-        <item name="android:windowBackground">@drawable/splash_screen</item>
+    <style name="Theme.Calculator.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.Calculator</item>
     </style>
 </resources>

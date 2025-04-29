@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.navigation.compose)
     implementation(libs.splitties.views.recyclerview)
+    implementation(libs.androidx.core.splashscreen)
     //evalex
     implementation(libs.evalex)
     implementation(libs.evalex.big.math)
