@@ -26,7 +26,7 @@ An elegant, Android-native calculator and currency converter app, built with **J
   View and clear previous operations in a neat list, persisted across app restarts via Room.
 
 - ☁️ **Offline Caching**  
-  Exchange rates and history are cached locally (Room/DataStore) for offline use—fresh data is fetched only when older than 24 hours.
+  Exchange rates and history are cached locally (Room/DataStore) for offline use — fresh data is fetched once a day.
 
 - ⌨️ **Custom Keypads**  
   Separate numeric/math keypad for the calculator and currency converter for optimized input.
