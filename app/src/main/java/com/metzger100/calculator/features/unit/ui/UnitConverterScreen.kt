@@ -21,9 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.features.unit.viewmodel.UnitConverterViewModel
 import com.metzger100.calculator.features.unit.ui.UnitConverterConstants.UnitDef
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import kotlin.math.abs
+import java.math.BigDecimal
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -194,44 +192,88 @@ fun UnitSelectorDialogRV(
 private class UnitViewHolder(val textView: TextView) : RecyclerView.ViewHolder(textView)
 
 private fun formatForDisplay(input: String): String {
-    val v = input.toDoubleOrNull() ?: return input.ifEmpty { "0" }
+    val bigdDec = try {
+        BigDecimal(input)
+    } catch (e: NumberFormatException) {
+        return input.ifEmpty { "0" }
+    }
 
-    // Sonderfall Null: zeige einfach "0"
-    if (v == 0.0) return "0"
+    // Sonderfall Null: signum()==0
+    if (bigdDec.signum() == 0) return "0"
+    val smallRegex = Regex("""^(-?)0*\.((?:0){5,})(\d+)$""")
+    smallRegex.matchEntire(input)?.let { m ->
+        val sign      = m.groupValues[1]
+        val zeroCount = m.groupValues[2].length
+        val digits    = m.groupValues[3]
+        val exponent  = -(zeroCount + 1)
+        val mantissa  = if (digits.length > 1)
+            "${digits[0]}.${digits.substring(1)}"
+        else
+            digits
+        return "$sign$mantissa×10${toSuperscript(exponent)}"
+    }
 
-    val absV = abs(v)
-    val lowerThreshold = 1e-3
-    val upperThreshold = 1e9
+    val bd = try {
+        BigDecimal(input)
+    } catch (e: Exception) {
+        return input
+    }
 
-    return if (absV in lowerThreshold..upperThreshold) {
-        val symbols = DecimalFormatSymbols().apply {
-            groupingSeparator = ' '
-            decimalSeparator  = '.'
-        }
-        DecimalFormat("#,##0.#########", symbols).apply {
-            isGroupingUsed = true
-        }.format(v)
+    if (bd.signum() == 0) return "0"
+
+    val absBd      = bd.abs()
+    val normalized = bd.stripTrailingZeros()
+    val scale      = normalized.scale()
+    val exponent   = -scale
+    val unscaled   = normalized.unscaledValue().abs().toString()
+
+    val lower = BigDecimal("0.001")
+    val upper = BigDecimal("1000000000")
+
+    val useSci = (absBd < lower && exponent >= 6)
+            || (absBd > upper && scale < 0)
+
+    val core = if (useSci) {
+        val mantissa = if (unscaled.length > 1)
+            "${unscaled[0]}.${unscaled.substring(1)}"
+        else
+            unscaled
+        val sign = if (bd.signum() < 0) "-" else ""
+        "$sign$mantissa×10${toSuperscript(exponent)}"
     } else {
-        val symbolsE = DecimalFormatSymbols().apply {
-            decimalSeparator  = '.'
-            exponentSeparator = "E"
+        groupIntegerPart(input)
+    }
+
+    return core
+}
+
+/** gruppiert nur den Integer-Teil mit ' ' und hängt alle originalen Dezimalstellen an */
+private fun groupIntegerPart(orig: String): String {
+    val negative = orig.startsWith("-")
+    val parts   = orig.trimStart('-').split(".", limit = 2)
+    val intPart = parts[0].ifEmpty { "0" }
+    val frac    = parts.getOrNull(1)
+
+    val groupedInt = intPart
+        .reversed()
+        .chunked(3)
+        .joinToString(" ")
+        .reversed()
+
+    return buildString {
+        if (negative) append('-')
+        append(groupedInt)
+        if (frac != null) {
+            append('.').append(frac)
         }
-        val sci = DecimalFormat("0.#########E0", symbolsE).format(v)
-        val (mantissa, expStr) = sci.split("E").let { it[0] to it.getOrElse(1) { "0" } }
-        val exponent = expStr.toIntOrNull() ?: 0
-        val sup = toSuperscript(exponent)
-        "$mantissa·10$sup"
     }
 }
 
-/**
- * Wandelt eine Ganzzahl in Unicode-Hochstellungs-Ziffern, z. B. -10 → ⁻¹⁰
- */
+/** Unicode-Hochstellung für den Exponenten, z.B. -6 → ⁻⁶ */
 private fun toSuperscript(exp: Int): String {
-    val supDigits = mapOf(
-        '0' to '⁰', '1' to '¹', '2' to '²', '3' to '³', '4' to '⁴',
-        '5' to '⁵', '6' to '⁶', '7' to '⁷', '8' to '⁸', '9' to '⁹',
-        '-' to '⁻'
+    val sup = mapOf(
+        '0' to '⁰','1' to '¹','2' to '²','3' to '³','4' to '⁴',
+        '5' to '⁵','6' to '⁶','7' to '⁷','8' to '⁸','9' to '⁹','-' to '⁻'
     )
-    return exp.toString().map { supDigits[it] ?: it }.joinToString("")
+    return exp.toString().map { sup[it] ?: it }.joinToString("")
 }

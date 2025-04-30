@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.metzger100.calculator.data.local.entity.CalculationEntity
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewModel
+import java.math.BigDecimal
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -120,7 +121,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     ) {
                         if (viewModel.previewResult.isNotEmpty()) {
                             Text(
-                                text = displayifyExpression(viewModel.input),
+                                text = replaceExpressions(viewModel.input),
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -132,7 +133,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                             )
                         } else {
                             Text(
-                                text = displayifyExpression(viewModel.input),
+                                text = replaceExpressions(viewModel.input),
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -178,6 +179,76 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 }
 
 fun displayifyExpression(expr: String): String {
+    val bd = try {
+        BigDecimal(expr)
+    } catch (e: Exception) {
+        return replaceExpressions(expr)
+    }
+
+    if (bd.signum() == 0) return "0"
+
+    val leadingZeroPattern = Regex("""^(-?)0*\.((?:0){5,})(\d+)$""")
+    leadingZeroPattern.matchEntire(expr)?.let { match ->
+        val sign = match.groupValues[1]
+        val zeroCount = match.groupValues[2].length
+        val digits = match.groupValues[3]
+        val exponent = -(zeroCount + 1)
+        val mantissa = if (digits.length > 1)
+            "${digits[0]}.${digits.substring(1)}"
+        else
+            digits
+        return replaceExpressions("$sign$mantissa×10${toSuperscript(exponent)}")
+    }
+
+    val absBd = bd.abs()
+    val normalized = bd.stripTrailingZeros()
+    val scale = normalized.scale()
+    val exponent = -scale
+    val unscaled = normalized.unscaledValue().abs().toString()
+
+    val lower = BigDecimal("0.001")
+    val upper = BigDecimal("1000000000")
+    val useSci = (absBd < lower && exponent >= 6) || (absBd > upper && scale < 0)
+
+    val core = if (useSci) {
+        val mantissa = if (unscaled.length > 1)
+            "${unscaled[0]}.${unscaled.substring(1)}"
+        else
+            unscaled
+        val sign = if (bd.signum() < 0) "-" else ""
+        "$sign$mantissa×10${toSuperscript(exponent)}"
+    } else {
+        groupIntegerPart(expr)
+    }
+
+    return replaceExpressions(core)
+}
+
+
+/** gruppiert den Ganzzahlteil mit ' ' und behält die komplette Fraction aus expr bei */
+private fun groupIntegerPart(orig: String): String {
+    val negative = orig.startsWith("-")
+    val parts = orig.trimStart('-').split(".", limit = 2)
+    val intPart = parts[0].ifEmpty { "0" }
+    val fracPart = parts.getOrNull(1)
+
+    val groupedInt = intPart
+        .reversed()
+        .chunked(3)
+        .joinToString(" ")
+        .reversed()
+
+    return buildString {
+        if (negative) append('-')
+        append(groupedInt)
+        if (fracPart != null) {
+            append('.')
+            append(fracPart)
+        }
+    }
+}
+
+private fun replaceExpressions(expr: String): String {
     return expr
         .replace("/", "÷")
         .replace("*", "×")
@@ -202,6 +273,15 @@ fun displayifyExpression(expr: String): String {
         .replace("SIN(", "sin(")
         .replace("COS(", "cos(")
         .replace("TAN(", "tan(")
+}
+
+private fun toSuperscript(exp: Int): String {
+    val supDigits = mapOf(
+        '0' to '⁰', '1' to '¹', '2' to '²', '3' to '³', '4' to '⁴',
+        '5' to '⁵', '6' to '⁶', '7' to '⁷', '8' to '⁸', '9' to '⁹',
+        '-' to '⁻'
+    )
+    return exp.toString().map { supDigits[it] ?: it }.joinToString("")
 }
 
 // --- RecyclerView Adapter & ViewHolder ---
@@ -248,7 +328,7 @@ private class CalculationAdapter(
     override fun onBindViewHolder(holder: CalculationViewHolder, position: Int) {
         val entry = items[position]
         holder.inputView.text = displayifyExpression(entry.input)
-        holder.resultView.text = "= ${entry.result}"
+        holder.resultView.text = "= ${displayifyExpression(entry.result)}"
     }
 }
 

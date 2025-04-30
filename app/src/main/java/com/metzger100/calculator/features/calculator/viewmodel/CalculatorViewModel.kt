@@ -13,7 +13,6 @@ import com.metzger100.calculator.data.local.entity.CalculationEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import java.math.RoundingMode
 import javax.inject.Inject
 
 @HiltViewModel
@@ -234,7 +233,7 @@ class CalculatorViewModel @Inject constructor(
 
     private fun formatResult(result: String): String {
         return try {
-            val bigDecimalResult = BigDecimal(result).setScale(9, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+            val bigDecimalResult = BigDecimal(result).stripTrailingZeros().toPlainString()
             bigDecimalResult.toString()
         } catch (e: NumberFormatException) {
             result
