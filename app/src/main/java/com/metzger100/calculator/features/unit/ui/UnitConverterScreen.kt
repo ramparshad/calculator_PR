@@ -97,14 +97,24 @@ fun UnitRow(
     ) else Modifier
 
     Card(
-        Modifier.fillMaxWidth().height(56.dp).then(borderM).clickable { onClick() },
+        Modifier
+            .fillMaxWidth()
+            .then(borderM)
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Row(Modifier.fillMaxSize().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 text = stringResource(labelRes),
                 fontSize = 18.sp,
-                modifier = Modifier.clickable { show = true })
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .clickable { show = true })
             Spacer(Modifier.width(16.dp))
 
             val displayText = if (isSel) {
@@ -116,7 +126,11 @@ fun UnitRow(
             Text(
                 text = displayText,
                 fontSize = if (isSel) 24.sp else 20.sp,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .align(Alignment.CenterVertically),
+                softWrap = true,
+                maxLines = Int.MAX_VALUE
             )
         }
     }
