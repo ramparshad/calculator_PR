@@ -133,7 +133,7 @@ class CalculatorViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             previewResult = application.getString(R.string.Calculator_Error)
-            Log.e("CalculatorViewModel", "Error during calculation", e)
+            Log.e("CalculatorViewModel", "Error during calculation")
         }
     }
 
@@ -161,7 +161,7 @@ class CalculatorViewModel @Inject constructor(
             Log.d("CalculatorViewModel", "Preview result updated: $previewResult")
         } catch (e: Exception) {
             previewResult = application.getString(R.string.Calculator_Error)
-            Log.e("CalculatorViewModel", "Error updating preview result", e)
+            Log.e("CalculatorViewModel", "Error updating preview result")
         }
     }
 
@@ -202,7 +202,7 @@ class CalculatorViewModel @Inject constructor(
                     return false
                 }
             } catch (e: Exception) {
-                Log.e("CalculatorViewModel", "Error evaluating factorial argument: $innerExpression", e)
+                Log.e("CalculatorViewModel", "Error evaluating factorial argument: $innerExpression")
                 return false
             }
 
