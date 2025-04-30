@@ -15,6 +15,7 @@
 	<string name="update_due">Update fällig</string>
 	<string name="Back">Zurück</string>
 	<string name="Snackbar_CurRefreshData">Info: Kurse werden automatisch aktualisiert, außer wenn der Währungs-Tab um %1$s Ortszeit bereits geöffnet ist. Manuelles Aktualisieren ist nur dann nötig.</string>
+	<string name="Snackbar_CurRefreshData_Dismiss">Verwerfen</string>
 
 	<!-- Unit Categories -->
 	<string name="UnitConvCat_Length">Länge</string>

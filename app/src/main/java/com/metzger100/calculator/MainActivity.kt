@@ -79,6 +79,7 @@ fun AppContent() {
             R.string.Snackbar_CurRefreshData,
             refreshLocalTime
         )
+        val acl = stringResource(R.string.Snackbar_CurRefreshData_Dismiss)
 
         val showBack = currentRoute?.startsWith("unit/") == true
 
@@ -104,7 +105,7 @@ fun AppContent() {
                         scope.launch {
                             snackbarHostState.showSnackbar(
                                 message = msg,
-                                actionLabel = "Dismiss"
+                                actionLabel = acl
                             )
                         }
                     }

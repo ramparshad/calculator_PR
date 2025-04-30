@@ -15,6 +15,7 @@
     <string name="update_due">Update due</string>
     <string name="Back">Back</string>
     <string name="Snackbar_CurRefreshData">Info: Rates update automatically, unless the Currency tab was open at %1$s local time. Manual refresh is only needed in that case.</string>
+    <string name="Snackbar_CurRefreshData_Dismiss">Dismiss</string>
 
     <!-- Unit Categories -->
     <string name="UnitConvCat_Length">Length</string>
