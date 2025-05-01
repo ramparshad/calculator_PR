@@ -364,14 +364,14 @@ fun CurrencySelectorDialogRV(
 class CurrencyViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
 private fun formatForDisplay(input: String): String {
-    val bigdDec = try {
+    val bigDec = try {
         BigDecimal(input)
     } catch (e: NumberFormatException) {
         return input.ifEmpty { "0" }
     }
 
     // Sonderfall Null: signum()==0
-    if (bigdDec.signum() == 0) return "0"
+    if (bigDec.signum() == 0) return "0"
     val smallRegex = Regex("""^(-?)0*\.((?:0){5,})(\d+)$""")
     smallRegex.matchEntire(input)?.let { m ->
         val sign      = m.groupValues[1]
@@ -415,6 +415,16 @@ private fun formatForDisplay(input: String): String {
         "$sign$mantissa×10${toSuperscript(exponent)}"
     } else {
         groupIntegerPart(input)
+    }
+
+    if (!core.contains("×10")) {
+        return if (core.contains('.')) {
+            val parts = core.split('.', limit = 2)
+            val frac  = parts[1]
+            if (frac.length >= 2) core else core + "0".repeat(2 - frac.length)
+        } else {
+            core + ".00"
+        }
     }
 
     return core

@@ -223,8 +223,8 @@ class CurrencyViewModel @Inject constructor(
         } catch (e: ArithmeticException) {
             return "0"
         }
-        val resultBD = intermediate.multiply(toRateBD, mc)
-        val scaled = resultBD.setScale(2, RoundingMode.HALF_UP)
-        return scaled.stripTrailingZeros().toPlainString()
+
+        val resultBD = intermediate.multiply(toRateBD, mc).stripTrailingZeros().toPlainString()
+        return resultBD
     }
 }
