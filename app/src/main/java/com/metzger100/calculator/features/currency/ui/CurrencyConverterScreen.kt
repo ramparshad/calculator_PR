@@ -29,6 +29,7 @@ import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.CurrencyConverterConstants.MajorCurrencyCodes
 import kotlinx.coroutines.delay
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -58,6 +59,17 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
         currenciesWithTitles.isNotEmpty() -> currenciesWithTitles
         else -> listOf("USD" to "US Dollar", "EUR" to "Euro")
     }
+
+    val shortInput1 = runCatching {
+        // wenn leer -> Default true (= kurzer Modus)
+        val v = viewModel.value1.takeIf { it.isNotBlank() } ?: "0"
+        BigDecimal(v).stripTrailingZeros().scale() < 3
+    }.getOrDefault(true)
+
+    val shortInput2 = runCatching {
+        val v = viewModel.value2.takeIf { it.isNotBlank() } ?: "0"
+        BigDecimal(v).stripTrailingZeros().scale() < 3
+    }.getOrDefault(true)
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -101,7 +113,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
             // Feld 1
             CurrencyRow(
                 currency = codeList.find { it.first == viewModel.currency1 }?.second ?: viewModel.currency1,
-                value = if (viewModel.selectedField == 1) viewModel.value1 else formatForDisplay(viewModel.value1),
+                value = if (viewModel.selectedField == 1) viewModel.value1 else formatForDisplay(viewModel.value1, shortInput2),
                 isSelected = viewModel.selectedField == 1,
                 currencies = codeList,
                 onCurrencySelected = { viewModel.onCurrencyChanged1(it) },
@@ -112,7 +124,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
             // Feld 2
             CurrencyRow(
                 currency = codeList.find { it.first == viewModel.currency2 }?.second ?: viewModel.currency2,
-                value = if (viewModel.selectedField == 2) viewModel.value2 else formatForDisplay(viewModel.value2),
+                value = if (viewModel.selectedField == 2) viewModel.value2 else formatForDisplay(viewModel.value2, shortInput1),
                 isSelected = viewModel.selectedField == 2,
                 currencies = codeList,
                 onCurrencySelected = { viewModel.onCurrencyChanged2(it) },
@@ -363,11 +375,16 @@ fun CurrencySelectorDialogRV(
 
 class CurrencyViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
-private fun formatForDisplay(input: String): String {
+private fun formatForDisplay(input: String, shortInput: Boolean): String {
     val bigDec = try {
         BigDecimal(input)
     } catch (e: NumberFormatException) {
         return input.ifEmpty { "0" }
+    }
+
+    if (shortInput) {
+        val scaled = bigDec.setScale(2, RoundingMode.HALF_UP)
+        return scaled.toPlainString()
     }
 
     // Sonderfall Null: signum()==0
@@ -416,17 +433,6 @@ private fun formatForDisplay(input: String): String {
     } else {
         groupIntegerPart(input)
     }
-
-    if (!core.contains("×10")) {
-        return if (core.contains('.')) {
-            val parts = core.split('.', limit = 2)
-            val frac  = parts[1]
-            if (frac.length >= 2) core else core + "0".repeat(2 - frac.length)
-        } else {
-            core + ".00"
-        }
-    }
-
     return core
 }
 
