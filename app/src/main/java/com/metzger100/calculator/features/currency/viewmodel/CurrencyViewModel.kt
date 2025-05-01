@@ -224,7 +224,7 @@ class CurrencyViewModel @Inject constructor(
             return "0"
         }
         val resultBD = intermediate.multiply(toRateBD, mc)
-        val scaled = resultBD.setScale(2, RoundingMode.HALF_EVEN)
+        val scaled = resultBD.setScale(2, RoundingMode.HALF_UP)
         return scaled.stripTrailingZeros().toPlainString()
     }
 }
