@@ -114,8 +114,8 @@ class CalculatorViewModel @Inject constructor(
             Log.d("CalculatorViewModel", "Valid input, evaluating expression...")
 
             val config = ExpressionConfiguration.builder()
-                .mathContext(MathContext(50, RoundingMode.HALF_UP))
-                .decimalPlacesResult(50)
+                .mathContext(MathContext(18, RoundingMode.HALF_UP))
+                .decimalPlacesResult(16)
                 .build()
             val expression = BigMathExpression(input, config)
             val result = expression.evaluate().numberValue
@@ -161,8 +161,8 @@ class CalculatorViewModel @Inject constructor(
 
         try {
             val config = ExpressionConfiguration.builder()
-                .mathContext(MathContext(50, RoundingMode.HALF_UP))
-                .decimalPlacesResult(50)
+                .mathContext(MathContext(18, RoundingMode.HALF_UP))
+                .decimalPlacesResult(16)
                 .build()
             val expression = BigMathExpression(input, config)
             previewResult = expression.evaluate().numberValue
@@ -208,8 +208,8 @@ class CalculatorViewModel @Inject constructor(
 
             try {
                 val config = ExpressionConfiguration.builder()
-                    .mathContext(MathContext(50, RoundingMode.HALF_UP))
-                    .decimalPlacesResult(50)
+                    .mathContext(MathContext(18, RoundingMode.HALF_UP))
+                    .decimalPlacesResult(16)
                     .build()
                 val evalResult = BigMathExpression(innerExpression, config).evaluate().numberValue
                 if (evalResult == null || evalResult < BigDecimal.ZERO || evalResult.stripTrailingZeros().scale() > 0) {
