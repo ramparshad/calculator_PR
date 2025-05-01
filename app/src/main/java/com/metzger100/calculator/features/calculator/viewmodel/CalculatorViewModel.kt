@@ -7,12 +7,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.ezylang.evalex.bigmath.BigMathExpression
+import com.ezylang.evalex.config.ExpressionConfiguration
 import com.metzger100.calculator.R
 import com.metzger100.calculator.data.repository.CalculationRepository
 import com.metzger100.calculator.data.local.entity.CalculationEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import java.math.MathContext
+import java.math.RoundingMode
 import javax.inject.Inject
 
 @HiltViewModel
@@ -110,7 +113,11 @@ class CalculatorViewModel @Inject constructor(
 
             Log.d("CalculatorViewModel", "Valid input, evaluating expression...")
 
-            val expression = BigMathExpression(input)
+            val config = ExpressionConfiguration.builder()
+                .mathContext(MathContext(50, RoundingMode.HALF_UP))
+                .decimalPlacesResult(50)
+                .build()
+            val expression = BigMathExpression(input, config)
             val result = expression.evaluate().numberValue
 
             if (result != null) {
@@ -153,7 +160,11 @@ class CalculatorViewModel @Inject constructor(
         }
 
         try {
-            val expression = BigMathExpression(input)
+            val config = ExpressionConfiguration.builder()
+                .mathContext(MathContext(50, RoundingMode.HALF_UP))
+                .decimalPlacesResult(50)
+                .build()
+            val expression = BigMathExpression(input, config)
             previewResult = expression.evaluate().numberValue
                 ?.toString()
                 ?: ""
@@ -196,7 +207,11 @@ class CalculatorViewModel @Inject constructor(
             }
 
             try {
-                val evalResult = BigMathExpression(innerExpression).evaluate().numberValue
+                val config = ExpressionConfiguration.builder()
+                    .mathContext(MathContext(50, RoundingMode.HALF_UP))
+                    .decimalPlacesResult(50)
+                    .build()
+                val evalResult = BigMathExpression(innerExpression, config).evaluate().numberValue
                 if (evalResult == null || evalResult < BigDecimal.ZERO || evalResult.stripTrailingZeros().scale() > 0) {
                     Log.d("CalculatorViewModel", "Invalid factorial argument: $innerExpression, result: $evalResult")
                     return false
