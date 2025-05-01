@@ -206,14 +206,14 @@ fun UnitSelectorDialogRV(
 private class UnitViewHolder(val textView: TextView) : RecyclerView.ViewHolder(textView)
 
 private fun formatForDisplay(input: String): String {
-    val bigdDec = try {
+    val bigDec = try {
         BigDecimal(input)
     } catch (e: NumberFormatException) {
         return input.ifEmpty { "0" }
     }
 
     // Sonderfall Null: signum()==0
-    if (bigdDec.signum() == 0) return "0"
+    if (bigDec.signum() == 0) return "0"
     val smallRegex = Regex("""^(-?)0*\.((?:0){5,})(\d+)$""")
     smallRegex.matchEntire(input)?.let { m ->
         val sign      = m.groupValues[1]
@@ -237,8 +237,9 @@ private fun formatForDisplay(input: String): String {
 
     val absBd      = bd.abs()
     val normalized = bd.stripTrailingZeros()
+    val precision = normalized.precision()
     val scale      = normalized.scale()
-    val exponent   = -scale
+    val exponent = precision - scale - 1
     val unscaled   = normalized.unscaledValue().abs().toString()
 
     val lower = BigDecimal("0.001")

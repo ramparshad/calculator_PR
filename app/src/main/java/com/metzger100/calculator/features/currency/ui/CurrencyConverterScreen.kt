@@ -395,8 +395,9 @@ private fun formatForDisplay(input: String): String {
 
     val absBd      = bd.abs()
     val normalized = bd.stripTrailingZeros()
+    val precision = normalized.precision()
     val scale      = normalized.scale()
-    val exponent   = -scale
+    val exponent = precision - scale - 1
     val unscaled   = normalized.unscaledValue().abs().toString()
 
     val lower = BigDecimal("0.001")
