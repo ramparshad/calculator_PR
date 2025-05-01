@@ -227,16 +227,8 @@ private fun formatForDisplay(input: String): String {
         return "$sign$mantissa×10${toSuperscript(exponent)}"
     }
 
-    val bd = try {
-        BigDecimal(input)
-    } catch (e: Exception) {
-        return input
-    }
-
-    if (bd.signum() == 0) return "0"
-
-    val absBd      = bd.abs()
-    val normalized = bd.stripTrailingZeros()
+    val absBd      = bigDec.abs()
+    val normalized = bigDec.stripTrailingZeros()
     val precision = normalized.precision()
     val scale      = normalized.scale()
     val exponent = precision - scale - 1
@@ -253,7 +245,7 @@ private fun formatForDisplay(input: String): String {
             "${unscaled[0]}.${unscaled.substring(1)}"
         else
             unscaled
-        val sign = if (bd.signum() < 0) "-" else ""
+        val sign = if (bigDec.signum() < 0) "-" else ""
         "$sign$mantissa×10${toSuperscript(exponent)}"
     } else {
         groupIntegerPart(input)
