@@ -62,8 +62,8 @@ class UnitConverterViewModel(
         // Input in BigDecimal parsen
         val v = input.toBigDecimalOrNull() ?: return ""
 
-        // Rechenkontext: 12 signifikante Stellen, Half-Up-Rundung
-        val mc = MathContext(12, RoundingMode.HALF_UP)
+        // Rechenkontext: 16 signifikante Stellen, Half-Up-Rundung
+        val mc = MathContext(16, RoundingMode.HALF_UP)
 
         val result: BigDecimal = when (category) {
             "Temperature" -> {

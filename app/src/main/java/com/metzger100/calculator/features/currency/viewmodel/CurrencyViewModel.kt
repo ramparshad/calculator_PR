@@ -18,8 +18,10 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.util.Locale
+import java.math.BigDecimal
+import java.math.MathContext
 import javax.inject.Inject
+import java.math.RoundingMode
 
 @HiltViewModel
 @SuppressLint("DefaultLocale")
@@ -203,29 +205,26 @@ class CurrencyViewModel @Inject constructor(
 
     @SuppressLint("DefaultLocale")
     private fun convert(amount: String, from: String, to: String): String {
-        // 1) Eingabe normalisieren: Komma → Punkt
         val normalized = amount.replace(',', '.')
-        val a = normalized.toDoubleOrNull()
-        if (a == null) {
-            Log.w(TAG, "convert: '$amount' not a number")
-            return "0.00"
+        val aBD = try {
+            BigDecimal(normalized)
+        } catch (e: Exception) {
+            return "0"
         }
 
-        // 2) Kurse holen
         val map = rates.value
-        val fromRate = map[from.lowercase()]
-        val toRate   = map[to.lowercase()]
-        if (fromRate == null || toRate == null) {
-            Log.w(TAG, "convert: rate not available (fromRate=$fromRate, toRate=$toRate)")
-            return "0.00"
+        val fromRateBD = map[from.lowercase()]?.let { BigDecimal.valueOf(it) } ?: return "0"
+        val toRateBD   = map[to.lowercase()]?.let { BigDecimal.valueOf(it) }   ?: return "0"
+
+        val mc = MathContext(16, RoundingMode.HALF_UP)
+
+        val intermediate = try {
+            aBD.divide(fromRateBD, mc)
+        } catch (e: ArithmeticException) {
+            return "0"
         }
-
-        // 3) Umrechnen
-        val result = (a / fromRate) * toRate
-
-        // 4) Ausgabe IMMER mit Punkt: US-Locale erzwingen
-        val formatted = String.format(Locale.US, "%.2f", result)
-        Log.d(TAG, "convert: $a $from → $formatted $to")
-        return formatted
+        val resultBD = intermediate.multiply(toRateBD, mc)
+        val scaled = resultBD.setScale(2, RoundingMode.HALF_EVEN)
+        return scaled.stripTrailingZeros().toPlainString()
     }
 }
