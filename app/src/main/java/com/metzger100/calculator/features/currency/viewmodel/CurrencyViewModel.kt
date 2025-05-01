@@ -159,7 +159,6 @@ class CurrencyViewModel @Inject constructor(
     fun onSelectField(field: Int) {
         Log.d(TAG, "onSelectField: $field")
         selectedField = field
-        recalc()
         persistPrefs()
     }
 

@@ -383,8 +383,8 @@ private fun formatForDisplay(input: String, shortInput: Boolean): String {
     }
 
     if (shortInput) {
-        val scaled = bigDec.setScale(2, RoundingMode.HALF_UP)
-        return scaled.toPlainString()
+        val rounded = bigDec.setScale(2, RoundingMode.HALF_UP)
+        return groupOrSci(rounded)
     }
 
     // Sonderfall Null: signum()==0
@@ -402,59 +402,40 @@ private fun formatForDisplay(input: String, shortInput: Boolean): String {
         return "$sign$mantissa×10${toSuperscript(exponent)}"
     }
 
-    val bd = try {
-        BigDecimal(input)
-    } catch (e: Exception) {
-        return input
-    }
-
-    if (bd.signum() == 0) return "0"
-
-    val absBd      = bd.abs()
-    val normalized = bd.stripTrailingZeros()
-    val precision = normalized.precision()
-    val scale      = normalized.scale()
-    val exponent = precision - scale - 1
-    val unscaled   = normalized.unscaledValue().abs().toString()
-
-    val lower = BigDecimal("0.001")
-    val upper = BigDecimal("1000000000")
-
-    val useSci = (absBd < lower && exponent >= 6)
-            || (absBd > upper && scale < 0)
-
-    val core = if (useSci) {
-        val mantissa = if (unscaled.length > 1)
-            "${unscaled[0]}.${unscaled.substring(1)}"
-        else
-            unscaled
-        val sign = if (bd.signum() < 0) "-" else ""
-        "$sign$mantissa×10${toSuperscript(exponent)}"
-    } else {
-        groupIntegerPart(input)
-    }
-    return core
+    return groupOrSci(bigDec, usePlainFallback = true)
 }
 
 /** gruppiert nur den Integer-Teil mit ' ' und hängt alle originalen Dezimalstellen an */
+private fun groupOrSci(bd: BigDecimal, usePlainFallback: Boolean = false): String {
+    val lower = BigDecimal("0.001")
+    val upper = BigDecimal("1000000000")
+    val absBd = bd.abs()
+    val norm  = bd.stripTrailingZeros()
+    val prec  = norm.precision()
+    val scale = norm.scale()
+    val exp   = prec - scale - 1
+    val unscaled = norm.unscaledValue().abs().toString()
+
+    val useSci = (!usePlainFallback && ((absBd < lower && exp >= 6) || (absBd > upper && scale < 0)))
+    return if (useSci) buildSci(bd.signum(), unscaled, exp) else groupIntegerPart(bd.toPlainString())
+}
+
+private fun buildSci(signum: Int, unscaled: String, exp: Int): String {
+    val mantissa = if (unscaled.length > 1) "${unscaled[0]}.${unscaled.substring(1)}" else unscaled
+    val signChar = if (signum < 0) "-" else ""
+    return "$signChar$mantissa×10${toSuperscript(exp)}"
+}
+
 private fun groupIntegerPart(orig: String): String {
     val negative = orig.startsWith("-")
-    val parts   = orig.trimStart('-').split(".", limit = 2)
-    val intPart = parts[0].ifEmpty { "0" }
-    val frac    = parts.getOrNull(1)
-
-    val groupedInt = intPart
-        .reversed()
-        .chunked(3)
-        .joinToString(" ")
-        .reversed()
-
+    val parts    = orig.trimStart('-').split('.', limit = 2)
+    val intPart  = parts[0].ifEmpty { "0" }
+    val frac     = parts.getOrNull(1)
+    val grouped  = intPart.reversed().chunked(3).joinToString(" ").reversed()
     return buildString {
         if (negative) append('-')
-        append(groupedInt)
-        if (frac != null) {
-            append('.').append(frac)
-        }
+        append(grouped)
+        if (frac != null) append('.').append(frac)
     }
 }
 
