@@ -147,6 +147,11 @@ com.metzger100.calculator
 │       ├── Theme.kt            # Application-wide theme
 │       └── Type.kt             # Font definitions and typography setup
 │
+├── util
+│   └── format
+│       ├── NumberFormatModule.kt  # Module for the service class
+│       └── NumberFormatService.kt # Service for readable numbers
+│
 └── MainActivity.kt             # Entry point of the app (MainActivity)
 ```
 
