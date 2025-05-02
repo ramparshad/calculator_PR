@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -29,7 +30,6 @@ import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.CurrencyConverterConstants.MajorCurrencyCodes
 import kotlinx.coroutines.delay
 import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -38,7 +38,7 @@ import java.time.format.DateTimeFormatter
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
+fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
     // Währungsdaten mit Code und Titel
     val currenciesWithTitles by viewModel.currenciesWithTitles
     val rates by viewModel.rates
@@ -113,7 +113,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
             // Feld 1
             CurrencyRow(
                 currency = codeList.find { it.first == viewModel.currency1 }?.second ?: viewModel.currency1,
-                value = if (viewModel.selectedField == 1) viewModel.value1 else formatForDisplay(viewModel.value1, shortInput2),
+                value = if (viewModel.selectedField == 1) viewModel.value1 else viewModel.formatNumber(viewModel.value1, shortInput2),
                 isSelected = viewModel.selectedField == 1,
                 currencies = codeList,
                 onCurrencySelected = { viewModel.onCurrencyChanged1(it) },
@@ -124,7 +124,7 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel) {
             // Feld 2
             CurrencyRow(
                 currency = codeList.find { it.first == viewModel.currency2 }?.second ?: viewModel.currency2,
-                value = if (viewModel.selectedField == 2) viewModel.value2 else formatForDisplay(viewModel.value2, shortInput1),
+                value = if (viewModel.selectedField == 2) viewModel.value2 else viewModel.formatNumber(viewModel.value2, shortInput1),
                 isSelected = viewModel.selectedField == 2,
                 currencies = codeList,
                 onCurrencySelected = { viewModel.onCurrencyChanged2(it) },
@@ -374,76 +374,3 @@ fun CurrencySelectorDialogRV(
 }
 
 class CurrencyViewHolder(view: View) : RecyclerView.ViewHolder(view)
-
-private fun formatForDisplay(input: String, shortInput: Boolean): String {
-    val bigDec = try {
-        BigDecimal(input)
-    } catch (e: NumberFormatException) {
-        return input.ifEmpty { "0" }
-    }
-
-    if (shortInput) {
-        val rounded = bigDec.setScale(2, RoundingMode.HALF_UP)
-        return groupOrSci(rounded)
-    }
-
-    // Sonderfall Null: signum()==0
-    if (bigDec.signum() == 0) return "0"
-    val smallRegex = Regex("""^(-?)0*\.((?:0){5,})(\d+)$""")
-    smallRegex.matchEntire(input)?.let { m ->
-        val sign      = m.groupValues[1]
-        val zeroCount = m.groupValues[2].length
-        val digits    = m.groupValues[3]
-        val exponent  = -(zeroCount + 1)
-        val mantissa  = if (digits.length > 1)
-            "${digits[0]}.${digits.substring(1)}"
-        else
-            digits
-        return "$sign$mantissa×10${toSuperscript(exponent)}"
-    }
-
-    return groupOrSci(bigDec, usePlainFallback = true)
-}
-
-/** gruppiert nur den Integer-Teil mit ' ' und hängt alle originalen Dezimalstellen an */
-private fun groupOrSci(bd: BigDecimal, usePlainFallback: Boolean = false): String {
-    val lower = BigDecimal("0.001")
-    val upper = BigDecimal("1000000000")
-    val absBd = bd.abs()
-    val norm  = bd.stripTrailingZeros()
-    val prec  = norm.precision()
-    val scale = norm.scale()
-    val exp   = prec - scale - 1
-    val unscaled = norm.unscaledValue().abs().toString()
-
-    val useSci = (!usePlainFallback && ((absBd < lower && exp >= 6) || (absBd > upper && scale < 0)))
-    return if (useSci) buildSci(bd.signum(), unscaled, exp) else groupIntegerPart(bd.toPlainString())
-}
-
-private fun buildSci(signum: Int, unscaled: String, exp: Int): String {
-    val mantissa = if (unscaled.length > 1) "${unscaled[0]}.${unscaled.substring(1)}" else unscaled
-    val signChar = if (signum < 0) "-" else ""
-    return "$signChar$mantissa×10${toSuperscript(exp)}"
-}
-
-private fun groupIntegerPart(orig: String): String {
-    val negative = orig.startsWith("-")
-    val parts    = orig.trimStart('-').split('.', limit = 2)
-    val intPart  = parts[0].ifEmpty { "0" }
-    val frac     = parts.getOrNull(1)
-    val grouped  = intPart.reversed().chunked(3).joinToString(" ").reversed()
-    return buildString {
-        if (negative) append('-')
-        append(grouped)
-        if (frac != null) append('.').append(frac)
-    }
-}
-
-/** Unicode-Hochstellung für den Exponenten, z.B. -6 → ⁻⁶ */
-private fun toSuperscript(exp: Int): String {
-    val sup = mapOf(
-        '0' to '⁰','1' to '¹','2' to '²','3' to '³','4' to '⁴',
-        '5' to '⁵','6' to '⁶','7' to '⁷','8' to '⁸','9' to '⁹','-' to '⁻'
-    )
-    return exp.toString().map { sup[it] ?: it }.joinToString("")
-}

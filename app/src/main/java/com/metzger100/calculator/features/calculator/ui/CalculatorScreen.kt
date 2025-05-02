@@ -19,17 +19,17 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.metzger100.calculator.data.local.entity.CalculationEntity
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewModel
-import java.math.BigDecimal
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun CalculatorScreen(viewModel: CalculatorViewModel) {
+fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
     var keyboardVisible by remember { mutableStateOf(false) }
 
     // reversed history snapshot
@@ -63,6 +63,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                         RecyclerView(context).apply {
                             layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, /*reverseLayout=*/ true)
                             adapter = CalculationAdapter(
+                                viewModel,
                                 textColor,
                                 resultColor
                             )
@@ -121,19 +122,19 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                     ) {
                         if (viewModel.previewResult.isNotEmpty()) {
                             Text(
-                                text = replaceExpressions(viewModel.input),
+                                text = viewModel.formatNumber(viewModel.input, shortMode = false, inputLine = true),
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "= ${displayifyExpression(viewModel.previewResult)}",
+                                text = "= ${viewModel.formatNumber(viewModel.previewResult, shortMode = false, inputLine = false)}",
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         } else {
                             Text(
-                                text = replaceExpressions(viewModel.input),
+                                text = viewModel.formatNumber(viewModel.input, shortMode = false, inputLine = true),
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -178,116 +179,10 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     }
 }
 
-fun displayifyExpression(expr: String): String {
-    val bd = try {
-        BigDecimal(expr)
-    } catch (e: Exception) {
-        return replaceExpressions(expr)
-    }
-
-    if (bd.signum() == 0) return "0"
-
-    val leadingZeroPattern = Regex("""^(-?)0*\.((?:0){5,})(\d+)$""")
-    leadingZeroPattern.matchEntire(expr)?.let { match ->
-        val sign = match.groupValues[1]
-        val zeroCount = match.groupValues[2].length
-        val digits = match.groupValues[3]
-        val exponent = -(zeroCount + 1)
-        val mantissa = if (digits.length > 1)
-            "${digits[0]}.${digits.substring(1)}"
-        else
-            digits
-        return replaceExpressions("$sign$mantissa×10${toSuperscript(exponent)}")
-    }
-
-    val absBd = bd.abs()
-    val normalized = bd.stripTrailingZeros()
-    val precision = normalized.precision()
-    val scale      = normalized.scale()
-    val exponent = precision - scale - 1
-    val unscaled = normalized.unscaledValue().abs().toString()
-
-    val lower = BigDecimal("0.001")
-    val upper = BigDecimal("1000000000")
-    val useSci = (absBd < lower && exponent >= 6) || (absBd > upper && scale < 0)
-
-    val core = if (useSci) {
-        val mantissa = if (unscaled.length > 1)
-            "${unscaled[0]}.${unscaled.substring(1)}"
-        else
-            unscaled
-        val sign = if (bd.signum() < 0) "-" else ""
-        "$sign$mantissa×10${toSuperscript(exponent)}"
-    } else {
-        groupIntegerPart(expr)
-    }
-
-    return replaceExpressions(core)
-}
-
-
-/** gruppiert den Ganzzahlteil mit ' ' und behält die komplette Fraction aus expr bei */
-private fun groupIntegerPart(orig: String): String {
-    val negative = orig.startsWith("-")
-    val parts = orig.trimStart('-').split(".", limit = 2)
-    val intPart = parts[0].ifEmpty { "0" }
-    val fracPart = parts.getOrNull(1)
-
-    val groupedInt = intPart
-        .reversed()
-        .chunked(3)
-        .joinToString(" ")
-        .reversed()
-
-    return buildString {
-        if (negative) append('-')
-        append(groupedInt)
-        if (fracPart != null) {
-            append('.')
-            append(fracPart)
-        }
-    }
-}
-
-private fun replaceExpressions(expr: String): String {
-    return expr
-        .replace("/", "÷")
-        .replace("*", "×")
-        .replace("-", "−")
-        .replace("RECIPROCAL(", "1/(")
-        .replace("EXP(", "e^(")
-        .replace("PI()", "π")
-        .replace("E()", "e")
-        .replace("SQRT(", "√(")
-        .replace("FACT(", "x!(")
-        .replace("LOG10(", "lg(")
-        .replace("LOG(", "ln(")
-        .replace("ASINR(", "sin⁻¹(")
-        .replace("ACOSR(", "cos⁻¹(")
-        .replace("ATANR(", "tan⁻¹(")
-        .replace("ASIN(", "sin⁻¹(")
-        .replace("ACOS(", "cos⁻¹(")
-        .replace("ATAN(", "tan⁻¹(")
-        .replace("SINR(", "sin(")
-        .replace("COSR(", "cos(")
-        .replace("TANR(", "tan(")
-        .replace("SIN(", "sin(")
-        .replace("COS(", "cos(")
-        .replace("TAN(", "tan(")
-}
-
-private fun toSuperscript(exp: Int): String {
-    val supDigits = mapOf(
-        '0' to '⁰', '1' to '¹', '2' to '²', '3' to '³', '4' to '⁴',
-        '5' to '⁵', '6' to '⁶', '7' to '⁷', '8' to '⁸', '9' to '⁹',
-        '-' to '⁻'
-    )
-    return exp.toString().map { supDigits[it] ?: it }.joinToString("")
-}
-
 // --- RecyclerView Adapter & ViewHolder ---
 
 private class CalculationAdapter(
+    private val viewModel: CalculatorViewModel,
     private val textColor: Int,
     private val resultColor: Int
 ) : RecyclerView.Adapter<CalculationViewHolder>() {
@@ -328,8 +223,8 @@ private class CalculationAdapter(
 
     override fun onBindViewHolder(holder: CalculationViewHolder, position: Int) {
         val entry = items[position]
-        holder.inputView.text = displayifyExpression(entry.input)
-        holder.resultView.text = "= ${displayifyExpression(entry.result)}"
+        holder.inputView.text = viewModel.formatNumber(entry.input, shortMode = false, inputLine = false)
+        holder.resultView.text = "= ${viewModel.formatNumber(entry.result, shortMode = false, inputLine = false)}"
     }
 }
 

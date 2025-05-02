@@ -6,11 +6,16 @@ import androidx.lifecycle.ViewModel
 import com.metzger100.calculator.features.unit.ui.UnitConverterConstants
 import com.metzger100.calculator.features.unit.ui.UnitConverterConstants.UnitDef
 import com.metzger100.calculator.R
+import com.metzger100.calculator.util.format.NumberFormatService
+import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
 
-class UnitConverterViewModel(
+@HiltViewModel
+class UnitConverterViewModel @Inject constructor(
+    private val numberFormatService: NumberFormatService,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -27,6 +32,9 @@ class UnitConverterViewModel(
     var toUnit   by mutableStateOf(availableUnits[1])
     var fromValue by mutableStateOf("")
     var toValue   by mutableStateOf("")
+
+    fun formatNumber(input: String, shortMode: Boolean): String =
+        numberFormatService.formatNumber(input, shortMode, inputLine = false)
 
     fun onValueChange(input: String) {
         if (selectedField == 1) {

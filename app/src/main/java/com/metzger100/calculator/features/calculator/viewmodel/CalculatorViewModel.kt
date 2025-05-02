@@ -11,6 +11,7 @@ import com.ezylang.evalex.config.ExpressionConfiguration
 import com.metzger100.calculator.R
 import com.metzger100.calculator.data.repository.CalculationRepository
 import com.metzger100.calculator.data.local.entity.CalculationEntity
+import com.metzger100.calculator.util.format.NumberFormatService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -21,6 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
     private val repository: CalculationRepository,
+    private val numberFormatService: NumberFormatService,
     private val application: Application
 ) : ViewModel() {
 
@@ -36,6 +38,9 @@ class CalculatorViewModel @Inject constructor(
             history = repository.getHistory()
         }
     }
+
+    fun formatNumber(input: String, shortMode: Boolean, inputLine: Boolean): String =
+        numberFormatService.formatNumber(input, shortMode, inputLine)
 
     var forceRefresh by mutableStateOf(false)
         private set

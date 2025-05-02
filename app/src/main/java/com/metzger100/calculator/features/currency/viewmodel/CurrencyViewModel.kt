@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import com.metzger100.calculator.data.ConnectivityObserver
 import com.metzger100.calculator.data.local.entity.CurrencyPrefsEntity
 import com.metzger100.calculator.data.repository.CurrencyRepository
+import com.metzger100.calculator.util.format.NumberFormatService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -27,6 +28,7 @@ import java.math.RoundingMode
 @SuppressLint("DefaultLocale")
 class CurrencyViewModel @Inject constructor(
     private val repo: CurrencyRepository,
+    private val numberFormatService: NumberFormatService,
     private val connectivityObserver: ConnectivityObserver
 ) : ViewModel() {
 
@@ -106,6 +108,9 @@ class CurrencyViewModel @Inject constructor(
             Log.d(TAG, "init: END")
         }
     }
+
+    fun formatNumber(input: String, shortMode: Boolean): String =
+        numberFormatService.formatNumber(input, shortMode, inputLine = false)
 
     /** Manuelles Nachladen (forceRefresh=false liefert Cache + frische Daten). */
     fun refreshData() {
