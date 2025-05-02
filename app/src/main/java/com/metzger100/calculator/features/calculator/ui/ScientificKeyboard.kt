@@ -1,17 +1,9 @@
 package com.metzger100.calculator.features.calculator.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Backspace
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
 fun ScientificKeyboard(
@@ -55,73 +47,23 @@ fun ScientificKeyboard(
                     horizontalArrangement = Arrangement.spacedBy(buttonSpacing)
                 ) {
                     row.forEach { label ->
-                        ScientificButton(
+                        KeyboardButton(
                             label = label,
                             modifier = Modifier.weight(1f),
                             onClick = {
                                 when (label) {
-                                    "INV" -> onToggleInverse()
-                                    "deg", "rad" -> onToggleDegreeMode()  // Schalte zwischen Grad und Rad
-                                    "C" -> onClear()
-                                    "←" -> onBack()
-                                    "=" -> onEquals()
-                                    "⇄" -> onToggleMode()
-                                    else -> onInput(mapScientificSymbol(label, isDegreeMode))
+                                    "INV"          -> onToggleInverse()
+                                    "deg","rad"   -> onToggleDegreeMode()
+                                    "C"            -> onClear()
+                                    "←"            -> onBack()
+                                    "="            -> onEquals()
+                                    "⇄"            -> onToggleMode()
+                                    else           -> onInput(mapScientificSymbol(label, isDegreeMode))
                                 }
-                            },
-                            isHighlighted = isHighlightedButton(label),
-                            isFaded = isFadedButton(label)
+                            }
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun ScientificButton(
-    label: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-    isHighlighted: Boolean,
-    isFaded: Boolean
-) {
-    val buttonColor = when {
-        isHighlighted -> MaterialTheme.colorScheme.primary
-        isFaded -> Color.Gray
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
-
-    val textColor = if (isHighlighted) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-
-    val surfaceModifier = modifier
-        .clickable { onClick() }
-
-    Surface(
-        modifier = surfaceModifier
-            .clickable { onClick() },
-        color = buttonColor,
-        tonalElevation = 4.dp,
-        shadowElevation = 2.dp,
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            when (label) {
-                "←" -> Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = "Backspace")
-                "⇄" -> Icon(Icons.Default.SwapHoriz, contentDescription = "Mode Switch")
-                else -> Text(
-                    text = label,
-                    fontSize = 20.sp,
-                    color = textColor
-                )
             }
         }
     }
