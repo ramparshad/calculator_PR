@@ -2,15 +2,17 @@ package com.metzger100.calculator.features.calculator.viewmodel
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.ezylang.evalex.bigmath.BigMathExpression
 import com.ezylang.evalex.config.ExpressionConfiguration
 import com.metzger100.calculator.R
-import com.metzger100.calculator.data.repository.CalculationRepository
 import com.metzger100.calculator.data.local.entity.CalculationEntity
+import com.metzger100.calculator.data.repository.CalculationRepository
+import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.metzger100.calculator.util.format.NumberFormatService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -19,6 +21,14 @@ import java.math.MathContext
 import java.math.RoundingMode
 import javax.inject.Inject
 
+data class CalculatorUiState(
+    val input: String = "",
+    val preview: String = "",
+    val mode: CalculatorMode = CalculatorMode.STANDARD,
+    val isDegree: Boolean = true,
+    val inverse: Boolean = false
+)
+
 @HiltViewModel
 class CalculatorViewModel @Inject constructor(
     private val repository: CalculationRepository,
@@ -26,7 +36,16 @@ class CalculatorViewModel @Inject constructor(
     private val application: Application
 ) : ViewModel() {
 
+    // History bleibt separat
     var history by mutableStateOf(listOf<CalculationEntity>())
+        private set
+
+    // Einzige UI-State–Variable
+    var uiState by mutableStateOf(CalculatorUiState())
+        private set
+
+    // Nur für forcierte List-Refresh nach clearHistory
+    var forceRefresh by mutableStateOf(false)
         private set
 
     init {
@@ -39,44 +58,43 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
-    fun formatNumber(input: String, shortMode: Boolean, inputLine: Boolean): String =
-        numberFormatService.formatNumber(input, shortMode, inputLine)
-
-    var forceRefresh by mutableStateOf(false)
-        private set
-
-    var mode by mutableStateOf(CalculatorMode.STANDARD)
-        private set
-
-    var input by mutableStateOf("")
-        private set
-
-    var previewResult by mutableStateOf("")
-        private set
-
-    var inverseMode by mutableStateOf(false)
-        private set
-
-    var isDegreeMode by mutableStateOf(true) // Startet im Grad-Modus
-        private set
+    fun formatNumber(
+        input: String,
+        shortMode: Boolean,
+        inputLine: Boolean
+    ): String = numberFormatService.formatNumber(input, shortMode, inputLine)
 
     fun toggleDegreeMode() {
-        isDegreeMode = !isDegreeMode
-        input = convertTrigFunctions(input)
-        updatePreviewResult()
+        val newIsDeg = !uiState.isDegree
+        // Trig-Funktionen im Input umschreiben
+        val converted = convertTrigFunctions(uiState.input, newIsDeg)
+        uiState = uiState.copy(
+            isDegree = newIsDeg,
+            input = converted,
+            preview = updatePreviewResults(converted)
+        )
     }
 
     fun toggleMode() {
-        mode = if (mode == CalculatorMode.STANDARD) CalculatorMode.SCIENTIFIC else CalculatorMode.STANDARD
+        val newMode = if (uiState.mode == CalculatorMode.STANDARD)
+            CalculatorMode.SCIENTIFIC
+        else
+            CalculatorMode.STANDARD
+
+        uiState = uiState.copy(mode = newMode)
     }
 
     fun toggleInverse() {
-        inverseMode = !inverseMode
+        uiState = uiState.copy(inverse = !uiState.inverse)
     }
 
-    fun onInput(value: String) {
-        input += value
-        updatePreviewResult()
+    // Eingabe-Handler
+    fun onInput(token: String) {
+        val newInput = uiState.input + token
+        uiState = uiState.copy(
+            input = newInput,
+            preview = updatePreviewResults(newInput)
+        )
     }
 
     fun backspace() {
@@ -88,14 +106,19 @@ class CalculatorViewModel @Inject constructor(
             "SQRT(", "FACT(", "LOG10(", "LOG(",
             "RECIPROCAL(","EXP(","PI()","E()"
         )
-        val match = tokens.firstOrNull { input.uppercase().endsWith(it) }
-        input = if (match != null) input.dropLast(match.length) else input.dropLast(1)
-        updatePreviewResult()
+        val match = tokens.firstOrNull { uiState.input.uppercase().endsWith(it) }
+        val newInput = if (match != null)
+            uiState.input.dropLast(match.length)
+        else
+            uiState.input.dropLast(1)
+        uiState = uiState.copy(
+            input = newInput,
+            preview = updatePreviewResults(newInput)
+        )
     }
 
     fun clear() {
-        input = ""
-        previewResult = ""
+        uiState = uiState.copy(input = "", preview = "")
     }
 
     fun clearHistory() {
@@ -108,141 +131,108 @@ class CalculatorViewModel @Inject constructor(
 
     fun calculate() {
         try {
-            Log.d("CalculatorViewModel", "Starting calculation for input: $input")
+            Log.d("CalculatorViewModel", "Calculating: ${uiState.input}")
 
-            if (!validateFactorials(input)) {
-                previewResult = application.getString(R.string.Calculator_Error)
-                Log.d("CalculatorViewModel", "Factorial validation failed for input: $input")
+            if (!validateFactorials(uiState.input)) {
+                uiState = uiState.copy(preview = application.getString(R.string.Calculator_Error))
                 return
             }
-
-            Log.d("CalculatorViewModel", "Valid input, evaluating expression...")
 
             val config = ExpressionConfiguration.builder()
                 .mathContext(MathContext(18, RoundingMode.HALF_UP))
                 .decimalPlacesResult(16)
                 .build()
-            val expression = BigMathExpression(input, config)
-            val result = expression.evaluate().numberValue
+            val expr = BigMathExpression(uiState.input, config)
+            val result = expr.evaluate().numberValue
 
             if (result != null) {
-                val resultString = BigDecimal(result.toString())
+                val resultStr = BigDecimal(result.toString())
                     .stripTrailingZeros()
                     .toPlainString()
 
                 viewModelScope.launch {
-                    repository.insert(input, resultString)
+                    repository.insert(uiState.input, resultStr)
                     history = repository.getHistory()
                 }
 
-                input = resultString
-                previewResult = ""
-                Log.d("CalculatorViewModel", "Calculation successful, result: $resultString")
+                uiState = uiState.copy(input = resultStr, preview = "")
+                Log.d("CalculatorViewModel", "Result: $resultStr")
             } else {
-                input = "0"
-                previewResult = ""
-                Log.d("CalculatorViewModel", "Result is null, input set to 0")
+                uiState = uiState.copy(input = "0", preview = "")
             }
         } catch (e: Exception) {
-            previewResult = application.getString(R.string.Calculator_Error)
-            Log.e("CalculatorViewModel", "Error during calculation")
+            uiState = uiState.copy(preview = application.getString(R.string.Calculator_Error))
+            Log.e("CalculatorViewModel", "Error during calculate", e)
         }
     }
 
-    private fun updatePreviewResult() {
-        if (input.isBlank()) {
-            previewResult = ""
-            Log.d("CalculatorViewModel", "Input is blank, preview result cleared.")
-            return
-        }
+    // --- Hilfsfunktionen ---
 
-        Log.d("CalculatorViewModel", "Updating preview result for input: $input")
-
+    private fun updatePreviewResults(input: String): String {
+        if (input.isBlank()) return ""
         if (!validateFactorials(input)) {
-            previewResult = application.getString(R.string.Calculator_Error)
-            Log.d("CalculatorViewModel", "Factorial validation failed for input: $input")
-            return
+            return application.getString(R.string.Calculator_Error)
         }
-
-        try {
+        return try {
             val config = ExpressionConfiguration.builder()
                 .mathContext(MathContext(18, RoundingMode.HALF_UP))
                 .decimalPlacesResult(16)
                 .build()
-            val expression = BigMathExpression(input, config)
-            previewResult = expression.evaluate().numberValue
+            val expr = BigMathExpression(input, config)
+            expr.evaluate().numberValue
                 ?.toString()
+                ?.let { formatResult(it) }
                 ?: ""
-            previewResult = formatResult(previewResult)
-            Log.d("CalculatorViewModel", "Preview result updated: $previewResult")
         } catch (e: Exception) {
-            previewResult = application.getString(R.string.Calculator_Error)
-            Log.e("CalculatorViewModel", "Error updating preview result")
+            application.getString(R.string.Calculator_Error)
         }
     }
 
     private fun validateFactorials(expression: String): Boolean {
-        Log.d("CalculatorViewModel", "Validating factorials in expression: $expression")
         var expr = expression
         while (true) {
-            val factIndex = expr.indexOf("FACT(")
-            if (factIndex == -1) break
-
-            var openBrackets = 1
-            var closeIndex = factIndex + 5
-            while (closeIndex < expr.length && openBrackets > 0) {
-                when (expr[closeIndex]) {
-                    '(' -> openBrackets++
-                    ')' -> openBrackets--
+            val idx = expr.indexOf("FACT(")
+            if (idx == -1) break
+            // finde schließende Klammer…
+            var open = 1; var pos = idx + 5
+            while (pos < expr.length && open > 0) {
+                when (expr[pos]) {
+                    '(' -> open++
+                    ')' -> open--
                 }
-                closeIndex++
+                pos++
             }
-
-            if (openBrackets != 0) {
-                Log.d("CalculatorViewModel", "Mismatched brackets in expression: $expr")
-                return false
-            }
-
-            val innerExpression = expr.substring(factIndex + 5, closeIndex - 1)
-            Log.d("CalculatorViewModel", "Found inner expression for FACT: $innerExpression")
-
-            if (!validateFactorials(innerExpression)) {
-                Log.d("CalculatorViewModel", "Nested factorial validation failed for inner expression: $innerExpression")
-                return false
-            }
-
+            if (open != 0) return false
+            val inner = expr.substring(idx + 5, pos - 1)
+            if (!validateFactorials(inner)) return false
             try {
-                val config = ExpressionConfiguration.builder()
+                val cfg = ExpressionConfiguration.builder()
                     .mathContext(MathContext(18, RoundingMode.HALF_UP))
                     .decimalPlacesResult(16)
                     .build()
-                val evalResult = BigMathExpression(innerExpression, config).evaluate().numberValue
-                if (evalResult == null || evalResult < BigDecimal.ZERO || evalResult.stripTrailingZeros().scale() > 0) {
-                    Log.d("CalculatorViewModel", "Invalid factorial argument: $innerExpression, result: $evalResult")
-                    return false
-                }
-            } catch (e: Exception) {
-                Log.e("CalculatorViewModel", "Error evaluating factorial argument: $innerExpression")
+                val valInner = BigMathExpression(inner, cfg).evaluate().numberValue
+                if (valInner == null ||
+                    valInner < BigDecimal.ZERO ||
+                    valInner.stripTrailingZeros().scale() > 0
+                ) return false
+            } catch (_: Exception) {
                 return false
             }
-
-            expr = expr.substring(0, factIndex) + expr.substring(closeIndex)
-            Log.d("CalculatorViewModel", "Continuing validation with remaining expression: $expr")
+            expr = expr.removeRange(idx, pos)
         }
-        Log.d("CalculatorViewModel", "Factorial validation passed for expression: $expression")
         return true
     }
 
-    private fun convertTrigFunctions(expression: String): String {
-        return if (isDegreeMode) {
-            expression.replace("SINR\\(".toRegex(), "SIN(")
+    private fun convertTrigFunctions(expr: String, toDegreeMode: Boolean): String {
+        return if (toDegreeMode) {
+            expr.replace("SINR\\(".toRegex(), "SIN(")
                 .replace("COSR\\(".toRegex(), "COS(")
                 .replace("TANR\\(".toRegex(), "TAN(")
                 .replace("ASINR\\(".toRegex(), "ASIN(")
                 .replace("ACOSR\\(".toRegex(), "ACOS(")
                 .replace("ATANR\\(".toRegex(), "ATAN(")
         } else {
-            expression.replace("SIN\\(".toRegex(), "SINR(")
+            expr.replace("SIN\\(".toRegex(), "SINR(")
                 .replace("COS\\(".toRegex(), "COSR(")
                 .replace("TAN\\(".toRegex(), "TANR(")
                 .replace("ASIN\\(".toRegex(), "ASINR(")
@@ -251,12 +241,11 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
-    private fun formatResult(result: String): String {
-        return try {
-            val bigDecimalResult = BigDecimal(result).stripTrailingZeros().toPlainString()
-            bigDecimalResult.toString()
-        } catch (e: NumberFormatException) {
-            result
+    private fun formatResult(raw: String): String =
+        try {
+            BigDecimal(raw).stripTrailingZeros().toPlainString()
+        } catch (_: NumberFormatException) {
+            raw
         }
-    }
+
 }

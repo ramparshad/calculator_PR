@@ -32,6 +32,9 @@ import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewMod
 fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
     var keyboardVisible by remember { mutableStateOf(false) }
 
+    // observe the single uiState
+    val uiState by viewModel::uiState
+
     // reversed history snapshot
     val reversedHistory by remember(viewModel.history) {
         derivedStateOf { viewModel.history.reversed() }
@@ -46,10 +49,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
         val textColor = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
         val resultColor = MaterialTheme.colorScheme.primary.toArgb()
 
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // --- replaced LazyColumn with RecyclerView ---
+        Column(modifier = Modifier.fillMaxSize()) {
+            // History list with RecyclerView
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -75,7 +76,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                         val adapter = rv.adapter as CalculationAdapter
                         adapter.updateData(reversedHistory)
                         if (reversedHistory.isNotEmpty()) {
-                            // always show newest at top
                             rv.scrollToPosition(0)
                         }
                     },
@@ -85,7 +85,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Input card
+            // Input & preview card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -100,10 +100,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Pfeil Button
-                    IconButton(
-                        onClick = { keyboardVisible = !keyboardVisible }
-                    ) {
+                    IconButton(onClick = { keyboardVisible = !keyboardVisible }) {
                         Icon(
                             imageVector = if (keyboardVisible) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
                             contentDescription = "Toggle Keyboard",
@@ -113,28 +110,27 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Input + Preview Texts
                     Column(
                         modifier = Modifier
                             .weight(1f)
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         horizontalAlignment = Alignment.End
                     ) {
-                        if (viewModel.previewResult.isNotEmpty()) {
+                        if (uiState.preview.isNotEmpty()) {
                             Text(
-                                text = viewModel.formatNumber(viewModel.input, shortMode = false, inputLine = true),
+                                text = viewModel.formatNumber(uiState.input, shortMode = false, inputLine = true),
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "= ${viewModel.formatNumber(viewModel.previewResult, shortMode = false, inputLine = false)}",
+                                text = "= ${viewModel.formatNumber(uiState.preview, shortMode = false, inputLine = false)}",
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         } else {
                             Text(
-                                text = viewModel.formatNumber(viewModel.input, shortMode = false, inputLine = true),
+                                text = viewModel.formatNumber(uiState.input, shortMode = false, inputLine = true),
                                 style = MaterialTheme.typography.headlineLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -145,32 +141,32 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Keyboard
+            // Keyboard area
             if (keyboardVisible) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(keyboardHeight)
                 ) {
-                    if (viewModel.mode == CalculatorMode.STANDARD) {
+                    if (uiState.mode == CalculatorMode.STANDARD) {
                         StandardKeyboard(
                             onInput = viewModel::onInput,
                             onClear = viewModel::clear,
                             onBack = viewModel::backspace,
-                            onEquals = { viewModel.calculate() },
+                            onEquals = viewModel::calculate,
                             onToggleMode = viewModel::toggleMode
                         )
                     } else {
                         ScientificKeyboard(
-                            inverse = viewModel.inverseMode,
+                            inverse = uiState.inverse,
                             onInput = viewModel::onInput,
                             onClear = viewModel::clear,
                             onBack = viewModel::backspace,
-                            onEquals = { viewModel.calculate() },
+                            onEquals = viewModel::calculate,
                             onToggleMode = viewModel::toggleMode,
                             onToggleInverse = viewModel::toggleInverse,
                             onToggleDegreeMode = viewModel::toggleDegreeMode,
-                            isDegreeMode = viewModel.isDegreeMode
+                            isDegreeMode = uiState.isDegree
                         )
                     }
                 }
@@ -179,8 +175,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
     }
 }
 
-// --- RecyclerView Adapter & ViewHolder ---
-
+// RecyclerView Adapter & ViewHolder remain unchanged except for input/result via uiState
 private class CalculationAdapter(
     private val viewModel: CalculatorViewModel,
     private val textColor: Int,

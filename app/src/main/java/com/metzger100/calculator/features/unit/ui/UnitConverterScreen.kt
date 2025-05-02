@@ -8,7 +8,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -27,6 +31,9 @@ import com.metzger100.calculator.features.unit.ui.UnitConverterConstants.UnitDef
 fun UnitConverterScreen(
     viewModel: UnitConverterViewModel
 ) {
+    // 1. ein einziger State‑Zugriff
+    val uiState by viewModel::uiState
+
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
@@ -40,23 +47,23 @@ fun UnitConverterScreen(
                 .padding(bottom = keyboardHeight)
         ) {
             UnitRow(
-                labelRes = viewModel.fromUnit.nameRes,
-                value    = viewModel.fromValue,
-                isSel    = viewModel.selectedField==1,
-                units    = viewModel.availableUnits,
+                labelRes       = uiState.fromUnit.nameRes,
+                value          = uiState.fromValue,
+                isSel          = (uiState.selectedField == 1),
+                units          = viewModel.availableUnits,
                 onUnitSelected = viewModel::onFromUnitChanged,
                 onClick        = { viewModel.onSelectField(1) },
-                formatNumber   = { str, shortMode -> viewModel.formatNumber(str, shortMode) }
+                formatNumber   = { str, short -> viewModel.formatNumber(str, short) }
             )
             Spacer(Modifier.height(8.dp))
             UnitRow(
-                labelRes = viewModel.toUnit.nameRes,
-                value    = viewModel.toValue,
-                isSel    = viewModel.selectedField==2,
-                units    = viewModel.availableUnits,
+                labelRes       = uiState.toUnit.nameRes,
+                value          = uiState.toValue,
+                isSel          = (uiState.selectedField == 2),
+                units          = viewModel.availableUnits,
                 onUnitSelected = viewModel::onToUnitChanged,
                 onClick        = { viewModel.onSelectField(2) },
-                formatNumber   = { str, shortMode -> viewModel.formatNumber(str, shortMode) }
+                formatNumber   = { str, short -> viewModel.formatNumber(str, short) }
             )
         }
 
@@ -68,13 +75,23 @@ fun UnitConverterScreen(
         ) {
             UnitConverterKeyboard(
                 onInput = { label ->
-                    val current = if (viewModel.selectedField == 1) viewModel.fromValue else viewModel.toValue
+                    // 2. Wert immer aus uiState ziehen
+                    val current = if (viewModel.uiState.selectedField == 1)
+                        viewModel.uiState.fromValue
+                    else
+                        viewModel.uiState.toValue
+
                     viewModel.onValueChange(current + label)
                 },
                 onClear = { viewModel.onValueChange("") },
                 onBack = {
-                    val current = if (viewModel.selectedField == 1) viewModel.fromValue else viewModel.toValue
-                    if (current.isNotEmpty()) viewModel.onValueChange(current.dropLast(1))
+                    val current = if (viewModel.uiState.selectedField == 1)
+                        viewModel.uiState.fromValue
+                    else
+                        viewModel.uiState.toValue
+
+                    if (current.isNotEmpty())
+                        viewModel.onValueChange(current.dropLast(1))
                 }
             )
         }
@@ -87,8 +104,8 @@ fun UnitRow(
     value: String,
     isSel: Boolean,
     units: List<UnitDef>,
-    onUnitSelected: (UnitDef)->Unit,
-    onClick: ()->Unit,
+    onUnitSelected: (UnitDef) -> Unit,
+    onClick: () -> Unit,
     formatNumber: (String, Boolean) -> String
 ) {
     var show by remember { mutableStateOf(false) }
@@ -116,7 +133,8 @@ fun UnitRow(
                 fontSize = 18.sp,
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
-                    .clickable { show = true })
+                    .clickable { show = true }
+            )
             Spacer(Modifier.width(16.dp))
 
             val displayText = if (isSel) {
@@ -186,9 +204,7 @@ fun UnitSelectorDialogRV(
                                     }
                                     return UnitViewHolder(textView)
                                 }
-
                                 override fun getItemCount() = units.size
-
                                 override fun onBindViewHolder(holder: UnitViewHolder, position: Int) {
                                     val unit = units[position]
                                     holder.textView.text = holder.textView.context.getString(unit.nameRes)

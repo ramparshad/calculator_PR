@@ -1,3 +1,4 @@
+// com.metzger100.calculator.features.currency.ui.CurrencyConverterScreen.kt
 package com.metzger100.calculator.features.currency.ui
 
 import android.annotation.SuppressLint
@@ -39,12 +40,14 @@ import java.time.format.DateTimeFormatter
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
-    // Währungsdaten mit Code und Titel
+    // gesamter UI‑State
+    val uiState by viewModel::uiState
+
     val currenciesWithTitles by viewModel.currenciesWithTitles
     val rates by viewModel.rates
     val lastApiDate by viewModel.lastApiDate
 
-    // nur wichtige Währungen filtern
+    // nur wichtige Währungen
     val filtered by remember(currenciesWithTitles) {
         derivedStateOf {
             currenciesWithTitles
@@ -52,36 +55,30 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
                 .sortedBy { MajorCurrencyCodes.indexOf(it.first) }
         }
     }
-
-    // fallback, falls die API-Liste noch leer oder gefiltert leer ist
     val codeList = when {
-        filtered.isNotEmpty() -> filtered
+        filtered.isNotEmpty()       -> filtered
         currenciesWithTitles.isNotEmpty() -> currenciesWithTitles
-        else -> listOf("USD" to "US Dollar", "EUR" to "Euro")
+        else                        -> listOf("USD" to "US Dollar", "EUR" to "Euro")
     }
 
+    // short‑Mode Erkennung
     val shortInput1 = runCatching {
-        // wenn leer -> Default true (= kurzer Modus)
-        val v = viewModel.value1.takeIf { it.isNotBlank() } ?: "0"
-        BigDecimal(v).stripTrailingZeros().scale() < 3
+        BigDecimal(uiState.value1.takeIf { it.isNotBlank() } ?: "0")
+            .stripTrailingZeros().scale() < 3
     }.getOrDefault(true)
-
     val shortInput2 = runCatching {
-        val v = viewModel.value2.takeIf { it.isNotBlank() } ?: "0"
-        BigDecimal(v).stripTrailingZeros().scale() < 3
+        BigDecimal(uiState.value2.takeIf { it.isNotBlank() } ?: "0")
+            .stripTrailingZeros().scale() < 3
     }.getOrDefault(true)
 
+    // onResume → refresh
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refreshData()
-            }
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshData()
         }
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     BoxWithConstraints(
@@ -96,10 +93,9 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
                 .fillMaxSize()
                 .padding(bottom = keyboardHeight)
         ) {
-            // Fehlermeldung, falls offline ohne Daten
             if (rates.isEmpty()) {
                 Text(
-                    text = stringResource(id = R.string.no_exchange_data),
+                    text = stringResource(R.string.no_exchange_data),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier
@@ -110,36 +106,32 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
                 Spacer(Modifier.height(8.dp))
             }
 
-            // Feld 1
             CurrencyRow(
-                currency = codeList.find { it.first == viewModel.currency1 }?.second ?: viewModel.currency1,
-                value = if (viewModel.selectedField == 1) viewModel.value1 else viewModel.formatNumber(viewModel.value1, shortInput2),
-                isSelected = viewModel.selectedField == 1,
-                currencies = codeList,
+                currency    = codeList.find { it.first == uiState.currency1 }?.second ?: uiState.currency1,
+                value       = if (uiState.selectedField == 1) uiState.value1 else viewModel.formatNumber(uiState.value1, shortInput2),
+                isSelected  = uiState.selectedField == 1,
+                currencies  = codeList,
                 onCurrencySelected = { viewModel.onCurrencyChanged1(it) },
-                onClick = { viewModel.onSelectField(1) }
+                onClick     = { viewModel.onSelectField(1) }
             )
             Spacer(Modifier.height(8.dp))
-
-            // Feld 2
             CurrencyRow(
-                currency = codeList.find { it.first == viewModel.currency2 }?.second ?: viewModel.currency2,
-                value = if (viewModel.selectedField == 2) viewModel.value2 else viewModel.formatNumber(viewModel.value2, shortInput1),
-                isSelected = viewModel.selectedField == 2,
-                currencies = codeList,
+                currency    = codeList.find { it.first == uiState.currency2 }?.second ?: uiState.currency2,
+                value       = if (uiState.selectedField == 2) uiState.value2 else viewModel.formatNumber(uiState.value2, shortInput1),
+                isSelected  = uiState.selectedField == 2,
+                currencies  = codeList,
                 onCurrencySelected = { viewModel.onCurrencyChanged2(it) },
-                onClick = { viewModel.onSelectField(2) }
+                onClick     = { viewModel.onSelectField(2) }
             )
         }
 
         ExchangeRateInfo(
             lastApiDate = lastApiDate,
-            modifier = Modifier
+            modifier    = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = keyboardHeight)
         )
 
-        // Tastatur
         Box(
             Modifier
                 .fillMaxWidth()
@@ -148,13 +140,13 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
         ) {
             CurrencyConverterKeyboard(
                 onInput = { label ->
-                    val currentValue = if (viewModel.selectedField == 1) viewModel.value1 else viewModel.value2
-                    viewModel.onValueChange(currentValue + label)
+                    val current = if (uiState.selectedField == 1) uiState.value1 else uiState.value2
+                    viewModel.onValueChange(current + label)
                 },
                 onClear = { viewModel.onValueChange("") },
                 onBack = {
-                    val currentValue = if (viewModel.selectedField == 1) viewModel.value1 else viewModel.value2
-                    if (currentValue.isNotEmpty()) viewModel.onValueChange(currentValue.dropLast(1))
+                    val current = if (uiState.selectedField == 1) uiState.value1 else uiState.value2
+                    if (current.isNotEmpty()) viewModel.onValueChange(current.dropLast(1))
                 }
             )
         }
@@ -166,27 +158,21 @@ fun ExchangeRateInfo(
     lastApiDate: LocalDate?,
     modifier: Modifier = Modifier
 ) {
-    // 1) Erzeuge einen Clock-State, der sich z.B. jede Minute aktualisiert
     val nowUtc by produceState(initialValue = Instant.now()) {
         while (true) {
             value = Instant.now()
-            delay(60_000L) // 1 Minute Pause – alle 60 Sekunden neu recomposen
+            delay(60_000L)
         }
     }
 
-    // 2) Berechne Datum und Schwelle aus unserem live-Timestamp
     val nowUtcOffset = nowUtc.atOffset(ZoneOffset.UTC)
     val todayUtc     = nowUtcOffset.toLocalDate()
-    val threshold    = todayUtc
-        .atTime(2, 0)
-        .atOffset(ZoneOffset.UTC)
-        .toInstant()
+    val threshold    = todayUtc.atTime(2,0).atOffset(ZoneOffset.UTC).toInstant()
 
     Column(
         modifier = modifier.padding(bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Anzeige “as of”
         if (lastApiDate == null) {
             Text(
                 text = stringResource(R.string.no_data_available),
@@ -201,10 +187,7 @@ fun ExchangeRateInfo(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
-
         Spacer(Modifier.height(4.dp))
-
-        // Anzeige “update_due” oder “next update” – jetzt getriggert von unserem Clock-State
         if (lastApiDate == null || (nowUtc >= threshold && lastApiDate.isBefore(todayUtc))) {
             Text(
                 text = stringResource(R.string.update_due),
@@ -213,15 +196,10 @@ fun ExchangeRateInfo(
             )
         } else {
             val nextDateUtc = if (nowUtcOffset.hour < 2) todayUtc else todayUtc.plusDays(1)
-            val nextUtcInst = nextDateUtc
-                .atTime(2, 0)
-                .atOffset(ZoneOffset.UTC)
-                .toInstant()
-            val nextLocal = nextUtcInst
-                .atZone(ZoneId.systemDefault())
+            val nextUtcInst = nextDateUtc.atTime(2,0).atOffset(ZoneOffset.UTC).toInstant()
+            val nextLocal  = nextUtcInst.atZone(ZoneId.systemDefault())
                 .toLocalDateTime()
                 .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
-
             Text(
                 text = stringResource(R.string.next_rates_update) + " " + nextLocal,
                 style = MaterialTheme.typography.bodySmall,
@@ -242,20 +220,14 @@ private fun CurrencyRow(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val borderModifier = if (isSelected) {
-        Modifier.border(
-            width = 2.dp,
-            color = MaterialTheme.colorScheme.primary,
-            shape = MaterialTheme.shapes.medium
-        )
+        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium)
     } else Modifier
 
-    val cardModifier = Modifier
-        .fillMaxWidth()
-        .then(borderModifier)
-        .clickable { onClick() }
-
     Card(
-        modifier = cardModifier,
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(borderModifier)
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
@@ -268,19 +240,14 @@ private fun CurrencyRow(
                 text = currency,
                 fontSize = 18.sp,
                 modifier = Modifier
-                    .align(Alignment.CenterVertically)
                     .clickable { showDialog = true }
             )
-
             Spacer(Modifier.width(16.dp))
-
             Text(
                 text = value.ifEmpty { "0" },
                 fontSize = if (isSelected) 24.sp else 20.sp,
-                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
-                    .weight(1f)
-                    .align(Alignment.CenterVertically),
+                    .weight(1f),
                 softWrap = true,
                 maxLines = Int.MAX_VALUE
             )
@@ -290,8 +257,8 @@ private fun CurrencyRow(
     if (showDialog) {
         CurrencySelectorDialogRV(
             currencies = currencies,
-            onCurrencySelected = { code ->
-                onCurrencySelected(code)
+            onCurrencySelected = {
+                onCurrencySelected(it)
                 showDialog = false
             },
             onDismissRequest = { showDialog = false }
@@ -314,7 +281,6 @@ fun CurrencySelectorDialogRV(
             if (dialogHeight.value == 0.dp) {
                 dialogHeight.value = maxDialogHeight
             }
-
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 tonalElevation = 8.dp,
@@ -336,9 +302,8 @@ fun CurrencySelectorDialogRV(
                                             ViewGroup.LayoutParams.WRAP_CONTENT
                                         )
                                     }
-
                                     val textView = TextView(context).apply {
-                                        setPadding(32, 24, 32, 24)
+                                        setPadding(32,24,32,24)
                                         textSize = 16f
                                         setTextColor(textColor.toArgb())
                                         layoutParams = ViewGroup.LayoutParams(
@@ -346,23 +311,16 @@ fun CurrencySelectorDialogRV(
                                             ViewGroup.LayoutParams.WRAP_CONTENT
                                         )
                                     }
-
                                     linearLayout.addView(textView)
-
                                     return CurrencyViewHolder(linearLayout)
                                 }
-
                                 override fun getItemCount() = currencies.size
-
                                 override fun onBindViewHolder(holder: CurrencyViewHolder, position: Int) {
                                     val (code, title) = currencies[position]
                                     val linearLayout = holder.itemView as LinearLayout
                                     val textView = linearLayout.getChildAt(0) as TextView
                                     textView.text = title
-
-                                    holder.itemView.setOnClickListener {
-                                        onCurrencySelected(code)
-                                    }
+                                    holder.itemView.setOnClickListener { onCurrencySelected(code) }
                                 }
                             }
                         }
@@ -373,4 +331,4 @@ fun CurrencySelectorDialogRV(
     }
 }
 
-class CurrencyViewHolder(view: View) : RecyclerView.ViewHolder(view)
+private class CurrencyViewHolder(view: View) : RecyclerView.ViewHolder(view)
