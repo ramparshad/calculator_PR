@@ -17,6 +17,7 @@ class NumberFormatService @Inject constructor() {
      *
      * @param input roher Eingabe‑String (Zahl oder Ausdruck)
      * @param shortMode wenn true: Currency‑Kurzmodus (immer 2 Dez), sonst Voll‑Modus
+     * @param inputLine wenn true: Calculator-InputZeile immer unverarbeitet, da man sonst den Input nur schlecht lesen kann.
      */
     fun formatNumber(input: String, shortMode: Boolean, inputLine: Boolean): String {
         // Calculator Input Line wird nicht formatiert, nur die ResultPreview
@@ -55,11 +56,11 @@ class NumberFormatService @Inject constructor() {
         val formatted = if (shortMode) {
             // Currency‑Kurzmodus: immer 2 Dezimalstellen
             val rounded = bigDec.setScale(2, RoundingMode.HALF_UP)
-            groupOrSci(rounded, usePlainFallback = false)
+            groupOrSci(rounded)
         } else {
             // Vollmodus (Calculator & Unit & Currency‑Voll): keine Rundung,
             // Sci‑Notation nur bei extremen Werten
-            groupOrSci(bigDec.stripTrailingZeros(), usePlainFallback = true)
+            groupOrSci(bigDec.stripTrailingZeros())
         }
 
         // 5) Operator‑Replacement (macht nur bei Calculator etwas)
@@ -68,8 +69,7 @@ class NumberFormatService @Inject constructor() {
 
     /** gruppiert oder liefert wissenschaftliche Notation zurück */
     private fun groupOrSci(
-        bd: BigDecimal,
-        usePlainFallback: Boolean
+        bd: BigDecimal
     ): String {
         val absBd = bd.abs()
         // precision/scale/exponent auf dem normierten Wert
@@ -79,8 +79,7 @@ class NumberFormatService @Inject constructor() {
         val exp   = prec - scale - 1
         val unscaled = norm.unscaledValue().abs().toString()
 
-        val useSci = (!usePlainFallback && ((absBd < lower && exp >= 6) || (absBd > upper && scale < 0)))
-                || (usePlainFallback && ((absBd < lower && exp >= 6) || (absBd > upper && scale < 0)))
+        val useSci = ((absBd < lower && exp >= 6) || (absBd > upper && scale < 0))
 
         return if (useSci) buildSci(bd.signum(), unscaled, exp)
         else groupIntegerPart(bd.toPlainString())
