@@ -117,6 +117,7 @@ com.metzger100.calculator
 │   │   │   └── CalculatorMode.kt
 │   │   ├── ui                  # UI components and Composables for the Calculator
 │   │   │   ├── CalculatorScreen.kt
+│   │   │   ├── KeyboardButton.kt
 │   │   │   ├── StandardKeyboard.kt
 │   │   │   └── ScientificKeyboard.kt
 │   │   └── viewmodel           # ViewModel for the Calculator feature
