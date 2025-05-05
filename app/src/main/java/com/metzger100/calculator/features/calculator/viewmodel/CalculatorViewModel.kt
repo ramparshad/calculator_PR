@@ -36,15 +36,12 @@ class CalculatorViewModel @Inject constructor(
     private val application: Application
 ) : ViewModel() {
 
-    // History bleibt separat
     var history by mutableStateOf(listOf<CalculationEntity>())
         private set
 
-    // Einzige UI-State–Variable
     var uiState by mutableStateOf(CalculatorUiState())
         private set
 
-    // Nur für forcierte List-Refresh nach clearHistory
     var forceRefresh by mutableStateOf(false)
         private set
 
@@ -66,7 +63,6 @@ class CalculatorViewModel @Inject constructor(
 
     fun toggleDegreeMode() {
         val newIsDeg = !uiState.isDegree
-        // Trig-Funktionen im Input umschreiben
         val converted = convertTrigFunctions(uiState.input, newIsDeg)
         uiState = uiState.copy(
             isDegree = newIsDeg,
@@ -88,7 +84,6 @@ class CalculatorViewModel @Inject constructor(
         uiState = uiState.copy(inverse = !uiState.inverse)
     }
 
-    // Eingabe-Handler
     fun onInput(token: String) {
         val newInput = uiState.input + token
         uiState = uiState.copy(
@@ -133,15 +128,12 @@ class CalculatorViewModel @Inject constructor(
         try {
             Log.d("CalculatorViewModel", "Calculating: ${uiState.input}")
 
-            if (!validateFactorials(uiState.input)) {
+            if (!validateExpression(uiState.input)) {
                 uiState = uiState.copy(preview = application.getString(R.string.Calculator_Error))
                 return
             }
 
-            val config = ExpressionConfiguration.builder()
-                .mathContext(MathContext(18, RoundingMode.HALF_UP))
-                .decimalPlacesResult(16)
-                .build()
+            val config = buildConfig()
             val expr = BigMathExpression(uiState.input, config)
             val result = expr.evaluate().numberValue
 
@@ -166,18 +158,13 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
-    // --- Hilfsfunktionen ---
-
     private fun updatePreviewResults(input: String): String {
         if (input.isBlank()) return ""
-        if (!validateFactorials(input)) {
+        if (!validateExpression(input)) {
             return application.getString(R.string.Calculator_Error)
         }
         return try {
-            val config = ExpressionConfiguration.builder()
-                .mathContext(MathContext(18, RoundingMode.HALF_UP))
-                .decimalPlacesResult(16)
-                .build()
+            val config = buildConfig()
             val expr = BigMathExpression(input, config)
             expr.evaluate().numberValue
                 ?.toString()
@@ -188,12 +175,102 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
-    private fun validateFactorials(expression: String): Boolean {
+    /** Baut die EvalEx‑Konfiguration mit gewünschter Genauigkeit und Standard‑Funktionen. */
+    private fun buildConfig(): ExpressionConfiguration {
+        return ExpressionConfiguration.builder()
+            .decimalPlacesResult(16)
+            .mathContext(MathContext(18, RoundingMode.HALF_UP))
+            .build()
+    }
+
+    /** Prüft, ob der gesamte Ausdruck in allen reellen Domains gültig ist. */
+    private fun validateExpression(input: String): Boolean {
+        val config = buildConfig()
+
+        if (!validateFactorials(input, config)) return false
+
+        if (!validateTanDomain(input, config, uiState.isDegree)) return false
+
+        if (!validateUnaryDomain(input, "SQRT", BigDecimal.ZERO, allowEqual = true, config)) return false
+        if (!validateUnaryDomain(input, "LOG", BigDecimal.ZERO, allowEqual = false, config)) return false
+        if (!validateUnaryDomain(input, "LOG10", BigDecimal.ZERO, allowEqual = false, config)) return false
+
+        return true
+    }
+
+    /** Extrahiert alle inneren Ausdrücke von FUNKTION(...) inklusive verschachtelter Klammern. */
+    private fun extractArgs(expr: String, functionName: String): List<String> {
+        val args = mutableListOf<String>()
+        var idx = 0
+        while (true) {
+            val start = expr.indexOf("$functionName(", idx).takeIf { it >= 0 } ?: break
+            var depth = 1
+            var pos = start + functionName.length + 1
+            while (pos < expr.length && depth > 0) {
+                when (expr[pos]) {
+                    '(' -> depth++
+                    ')' -> depth--
+                }
+                pos++
+            }
+            if (depth == 0) {
+                args += expr.substring(start + functionName.length + 1, pos - 1)
+                idx = pos
+            } else {
+                break
+            }
+        }
+        return args
+    }
+
+    /** Prüft unäre Funktionen (SQRT, LOG, LOG10) auf ihren Definitionsbereich. */
+    private fun validateUnaryDomain(
+        input: String,
+        functionName: String,
+        bound: BigDecimal,
+        allowEqual: Boolean,
+        config: ExpressionConfiguration
+    ): Boolean {
+        for (inner in extractArgs(input, functionName)) {
+            val v = try {
+                BigMathExpression(inner, config).evaluate().numberValue ?: return false
+            } catch (_: Exception) {
+                return false
+            }
+            if (allowEqual) {
+                if (v < bound) return false
+            } else {
+                if (v <= bound) return false
+            }
+        }
+        return true
+    }
+
+    /** Prüft TAN‑Polstellen über cos(inner) != 0 mit adaptivem Epsilon (ULP). */
+    private fun validateTanDomain(
+        input: String,
+        config: ExpressionConfiguration,
+        isDegree: Boolean
+    ): Boolean {
+        val fn = if (isDegree) "TAN" else "TANR"
+        val cosFn = if (isDegree) "COS" else "COSR"
+        for (inner in extractArgs(input, fn)) {
+            val cosVal = try {
+                BigMathExpression("$cosFn($inner)", config).evaluate().numberValue ?: return false
+            } catch (_: Exception) {
+                return false
+            }
+            val eps = cosVal.ulp().multiply(BigDecimal(2))
+            if (cosVal.abs() <= eps) return false
+        }
+        return true
+    }
+
+    private fun validateFactorials(expression: String, config: ExpressionConfiguration): Boolean {
         var expr = expression
         while (true) {
             val idx = expr.indexOf("FACT(")
             if (idx == -1) break
-            // finde schließende Klammer…
             var open = 1; var pos = idx + 5
             while (pos < expr.length && open > 0) {
                 when (expr[pos]) {
@@ -204,13 +281,9 @@ class CalculatorViewModel @Inject constructor(
             }
             if (open != 0) return false
             val inner = expr.substring(idx + 5, pos - 1)
-            if (!validateFactorials(inner)) return false
+            if (!validateFactorials(inner, config)) return false
             try {
-                val cfg = ExpressionConfiguration.builder()
-                    .mathContext(MathContext(18, RoundingMode.HALF_UP))
-                    .decimalPlacesResult(16)
-                    .build()
-                val valInner = BigMathExpression(inner, cfg).evaluate().numberValue
+                val valInner = BigMathExpression(inner, config).evaluate().numberValue
                 if (valInner == null ||
                     valInner < BigDecimal.ZERO ||
                     valInner.stripTrailingZeros().scale() > 0
@@ -247,5 +320,4 @@ class CalculatorViewModel @Inject constructor(
         } catch (_: NumberFormatException) {
             raw
         }
-
 }
