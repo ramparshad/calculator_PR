@@ -185,16 +185,40 @@ class CalculatorViewModel @Inject constructor(
 
     /** Prüft, ob der gesamte Ausdruck in allen reellen Domains gültig ist. */
     private fun validateExpression(input: String): Boolean {
+        val tag = "CalculatorViewModel"
+        Log.d(tag, "validateExpression: checking input=\"$input\"")
+
         val config = buildConfig()
 
-        if (!validateFactorials(input, config)) return false
+        if (input.trim() == "0^0") {
+            Log.w(tag, "Invalid: 0^0 is undefined")
+            return false
+        }
 
-        if (!validateTanDomain(input, config, uiState.isDegree)) return false
+        if (!validateFactorials(input, config)) {
+            Log.w(tag, "Invalid: factorial validation failed")
+            return false
+        }
 
-        if (!validateUnaryDomain(input, "SQRT", BigDecimal.ZERO, allowEqual = true, config)) return false
-        if (!validateUnaryDomain(input, "LOG", BigDecimal.ZERO, allowEqual = false, config)) return false
-        if (!validateUnaryDomain(input, "LOG10", BigDecimal.ZERO, allowEqual = false, config)) return false
+        if (!validateTanDomain(input, config, uiState.isDegree)) {
+            Log.w(tag, "Invalid: tangent domain validation failed")
+            return false
+        }
 
+        if (!validateUnaryDomain(input, "SQRT", BigDecimal.ZERO, allowEqual = true, config)) {
+            Log.w(tag, "Invalid: square root domain validation failed")
+            return false
+        }
+        if (!validateUnaryDomain(input, "LOG", BigDecimal.ZERO, allowEqual = false, config)) {
+            Log.w(tag, "Invalid: LOG argument must be greater than 0")
+            return false
+        }
+        if (!validateUnaryDomain(input, "LOG10", BigDecimal.ZERO, allowEqual = false, config)) {
+            Log.w(tag, "Invalid: LOG10 argument must be greater than 0")
+            return false
+        }
+
+        Log.d(tag, "validateExpression: input is valid")
         return true
     }
 
