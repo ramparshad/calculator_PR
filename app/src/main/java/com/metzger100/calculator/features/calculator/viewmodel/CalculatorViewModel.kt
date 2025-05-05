@@ -67,7 +67,7 @@ class CalculatorViewModel @Inject constructor(
         uiState = uiState.copy(
             isDegree = newIsDeg,
             input = converted,
-            preview = updatePreviewResults(converted)
+            preview = updatePreviewResults(converted, newIsDeg)
         )
     }
 
@@ -158,9 +158,9 @@ class CalculatorViewModel @Inject constructor(
         }
     }
 
-    private fun updatePreviewResults(input: String): String {
+    private fun updatePreviewResults(input: String, isDeg: Boolean = uiState.isDegree): String {
         if (input.isBlank()) return ""
-        if (!validateExpression(input)) {
+        if (!validateExpression(input, isDeg)) {
             return application.getString(R.string.Calculator_Error)
         }
         return try {
@@ -184,7 +184,7 @@ class CalculatorViewModel @Inject constructor(
     }
 
     /** Prüft, ob der gesamte Ausdruck in allen reellen Domains gültig ist. */
-    private fun validateExpression(input: String): Boolean {
+    private fun validateExpression(input: String, isDeg: Boolean = uiState.isDegree): Boolean {
         val tag = "CalculatorViewModel"
         Log.d(tag, "validateExpression: checking input=\"$input\"")
 
@@ -200,7 +200,7 @@ class CalculatorViewModel @Inject constructor(
             return false
         }
 
-        if (!validateTanDomain(input, config, uiState.isDegree)) {
+        if (!validateTanDomain(input, config, isDeg)) {
             Log.w(tag, "Invalid: tangent domain validation failed")
             return false
         }
