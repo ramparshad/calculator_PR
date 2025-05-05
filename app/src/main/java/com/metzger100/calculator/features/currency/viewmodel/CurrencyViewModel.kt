@@ -13,6 +13,8 @@ import com.metzger100.calculator.data.repository.CurrencyRepository
 import com.metzger100.calculator.util.format.NumberFormatService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -121,37 +123,49 @@ class CurrencyViewModel @Inject constructor(
     fun formatNumber(input: String, shortMode: Boolean): String =
         numberFormatService.formatNumber(input, shortMode, inputLine = false)
 
-    private fun persistPrefs() {
-        viewModelScope.launch {
-            repo.savePrefs(
-                CurrencyPrefsEntity(
-                    id          = 1,
-                    activeField = uiState.selectedField,
-                    currency1   = uiState.currency1,
-                    currency2   = uiState.currency2,
-                    amount1     = uiState.value1,
-                    amount2     = uiState.value2
-                )
+    private var prefsJob: Job? = null
+
+    private suspend fun savePrefs(state: CurrencyUiState) {
+        repo.savePrefs(
+            CurrencyPrefsEntity(
+                id          = 1,
+                activeField = state.selectedField,
+                currency1   = state.currency1,
+                currency2   = state.currency2,
+                amount1     = state.value1,
+                amount2     = state.value2
             )
-        }
+        )
     }
 
     fun onSelectField(field: Int) {
         uiState = uiState.copy(selectedField = field)
-        persistPrefs()
+        prefsJob?.cancel()
+        prefsJob = viewModelScope.launch {
+            delay(500)
+            savePrefs(uiState)
+        }
     }
 
     fun onCurrencyChanged1(code: String) {
         uiState = uiState.copy(currency1 = code)
-        _base.value = code                          // Basis ändern → rates neu
+        _base.value = code
         recalc()
-        persistPrefs()
+        prefsJob?.cancel()
+        prefsJob = viewModelScope.launch {
+            delay(500)
+            savePrefs(uiState)
+        }
     }
 
     fun onCurrencyChanged2(code: String) {
         uiState = uiState.copy(currency2 = code)
         recalc()
-        persistPrefs()
+        prefsJob?.cancel()
+        prefsJob = viewModelScope.launch {
+            delay(500)
+            savePrefs(uiState)
+        }
     }
 
     fun onValueChange(newValue: String) {
@@ -161,7 +175,11 @@ class CurrencyViewModel @Inject constructor(
             uiState.copy(value2 = newValue)
         }
         recalc()
-        persistPrefs()
+        prefsJob?.cancel()
+        prefsJob = viewModelScope.launch {
+            delay(500)
+            savePrefs(uiState)
+        }
     }
 
     private fun recalc() {
