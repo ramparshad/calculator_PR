@@ -2,7 +2,6 @@ package com.metzger100.calculator.features.currency.viewmodel
 
 import android.annotation.SuppressLint
 import android.util.Log
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,9 +12,8 @@ import com.metzger100.calculator.data.local.entity.CurrencyPrefsEntity
 import com.metzger100.calculator.data.repository.CurrencyRepository
 import com.metzger100.calculator.util.format.NumberFormatService
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.math.BigDecimal
@@ -48,22 +46,48 @@ class CurrencyViewModel @Inject constructor(
     var uiState by mutableStateOf(CurrencyUiState())
         private set
 
-    private val _rates = mutableStateOf<Map<String, Double>>(emptyMap())
-    val rates: State<Map<String, Double>> = _rates
+    // 2) Basis-Währung als Flow
+    private val _base = MutableStateFlow("USD")
+    val base: StateFlow<String> = _base
 
-    private val _currenciesWithTitles = mutableStateOf<List<Pair<String, String>>>(emptyList())
-    val currenciesWithTitles: State<List<Pair<String, String>>> = _currenciesWithTitles
+    // 4) Refresh-Trigger: bei jeder Erhöhung dieser Zahl feuern wir die Flows neu ab
+    private val refreshTrigger = MutableStateFlow(0)
 
-    private val _base = mutableStateOf("USD")
-    val base: State<String> = _base
+    // 5) currenciesWithTitles reagiert auf refreshTrigger
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val currenciesWithTitles: StateFlow<List<Pair<String, String>>> =
+        refreshTrigger
+            .flatMapLatest {
+                val currentOnlineStatus = connectivityObserver.isOnline()
+                repo.getCurrenciesFlow(isOnline = currentOnlineStatus)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = emptyList()
+            )
 
-    private val _lastApiDate = mutableStateOf<LocalDate?>(null)
-    val lastApiDate: State<LocalDate?> = _lastApiDate
+    // 6) rates reagiert auf refreshTrigger und auf Basis-Wechsel
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val rates: StateFlow<Map<String, Double>> =
+        combine(refreshTrigger, base) { _, b -> b }
+            .flatMapLatest { b ->
+                val currentOnlineStatus = connectivityObserver.isOnline()
+                repo.getRatesFlow(base = b, isOnline = currentOnlineStatus)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Lazily,
+                initialValue = emptyMap()
+            )
+
+    // 7) Datum der letzten API-Antwort
+    private val _lastApiDate = MutableStateFlow<LocalDate?>(null)
+    val lastApiDate: StateFlow<LocalDate?> = _lastApiDate
 
     init {
         viewModelScope.launch {
             Log.d(TAG, "init: START")
-            val online = connectivityObserver.isOnline()
             // Lade gespeicherte Prefs
             repo.getPrefs()?.let { prefs ->
                 uiState = CurrencyUiState(
@@ -73,58 +97,42 @@ class CurrencyViewModel @Inject constructor(
                     value1 = prefs.amount1,
                     value2 = prefs.amount2
                 )
+                _base.value = prefs.currency1
                 Log.d(TAG, "init: loaded prefs → $uiState")
             }
-            // Currencies Flow
-            repo.getCurrenciesFlow(isOnline = online)
-                .onEach { list -> _currenciesWithTitles.value = list }
-                .catch { e -> Log.e(TAG, "currenciesFlow error", e) }
-                .launchIn(this)
-            // Rates Flow
-            repo.getRatesFlow(base.value, isOnline = online)
-                .onEach { map ->
-                    _rates.value = map
-                    _lastApiDate.value = repo.getLastApiDateForBase(base.value)
-                    recalc()  // atomar über uiState.copy()
-                }
-                .catch { e -> Log.e(TAG, "ratesFlow error", e) }
-                .launchIn(this)
-            Log.d(TAG, "init: END")
+            // Erste Initial-Abfrage
+            refreshTrigger.update { it + 1 }
         }
+
+        // 9) Auf jeden neuen Satz von Kursen reagieren:
+        viewModelScope.launch {
+            rates.collect { rateMap ->
+                _lastApiDate.value = repo.getLastApiDateForBase(base.value)
+                recalc()
+            }
+        }
+    }
+
+    /** Manuelles Refresh feuert die beiden Flows neu ab */
+    fun refreshData() {
+        refreshTrigger.update { it + 1 }
     }
 
     fun formatNumber(input: String, shortMode: Boolean): String =
         numberFormatService.formatNumber(input, shortMode, inputLine = false)
 
-    fun refreshData() {
-        viewModelScope.launch {
-            val online = connectivityObserver.isOnline()
-            repo.getCurrenciesFlow(isOnline = online)
-                .onEach { _currenciesWithTitles.value = it }
-                .catch { }
-                .launchIn(this)
-            repo.getRatesFlow(base.value, isOnline = online)
-                .onEach {
-                    _rates.value = it
-                    _lastApiDate.value = repo.getLastApiDateForBase(base.value)
-                    recalc()
-                }
-                .catch { }
-                .launchIn(this)
-        }
-    }
-
     private fun persistPrefs() {
         viewModelScope.launch {
-            val prefs = CurrencyPrefsEntity(
-                id = 1,
-                activeField = uiState.selectedField,
-                currency1 = uiState.currency1,
-                currency2 = uiState.currency2,
-                amount1 = uiState.value1,
-                amount2 = uiState.value2
+            repo.savePrefs(
+                CurrencyPrefsEntity(
+                    id          = 1,
+                    activeField = uiState.selectedField,
+                    currency1   = uiState.currency1,
+                    currency2   = uiState.currency2,
+                    amount1     = uiState.value1,
+                    amount2     = uiState.value2
+                )
             )
-            repo.savePrefs(prefs)
         }
     }
 
@@ -135,6 +143,7 @@ class CurrencyViewModel @Inject constructor(
 
     fun onCurrencyChanged1(code: String) {
         uiState = uiState.copy(currency1 = code)
+        _base.value = code                          // Basis ändern → rates neu
         recalc()
         persistPrefs()
     }
@@ -156,35 +165,49 @@ class CurrencyViewModel @Inject constructor(
     }
 
     private fun recalc() {
-        val fromAmt: String
-        val toAmt: String
-        val fromCode: String
-        val toCode: String
-
-        if (uiState.selectedField == 1) {
-            fromAmt = uiState.value1
-            fromCode = uiState.currency1
-            toCode = uiState.currency2
-            toAmt = if (fromAmt.isBlank()) "" else convert(fromAmt, fromCode, toCode)
-            uiState = uiState.copy(value2 = toAmt)
+        // Eingabe und Codes ermitteln
+        val (fromAmt, fromCode, toCode) = if (uiState.selectedField == 1) {
+            Triple(uiState.value1, uiState.currency1, uiState.currency2)
         } else {
-            fromAmt = uiState.value2
-            fromCode = uiState.currency2
-            toCode = uiState.currency1
-            toAmt = if (fromAmt.isBlank()) "" else convert(fromAmt, fromCode, toCode)
-            uiState = uiState.copy(value1 = toAmt)
+            Triple(uiState.value2, uiState.currency2, uiState.currency1)
+        }
+
+        // Bei leerer Eingabe das Gegenfeld zurücksetzen
+        if (fromAmt.isBlank()) {
+            uiState = if (uiState.selectedField == 1) {
+                uiState.copy(value2 = "")
+            } else {
+                uiState.copy(value1 = "")
+            }
+            return
+        }
+
+        // Konvertierung durchführen
+        val result = convert(fromAmt, fromCode, toCode, rates.value)
+        uiState = if (uiState.selectedField == 1) {
+            uiState.copy(value2 = result)
+        } else {
+            uiState.copy(value1 = result)
         }
     }
 
     @SuppressLint("DefaultLocale")
-    private fun convert(amount: String, from: String, to: String): String {
+    private fun convert(
+        amount: String,
+        from: String,
+        to: String,
+        rates: Map<String, Double>
+    ): String {
         val normalized = amount.replace(',', '.')
-        val aBD = try { BigDecimal(normalized) } catch (e: Exception) { return "0" }
-        val map = rates.value
-        val fromRate = map[from.lowercase()]?.let { BigDecimal.valueOf(it) } ?: return "0"
-        val toRate   = map[to.lowercase()]?.let { BigDecimal.valueOf(it) }   ?: return "0"
+        val aBD = runCatching { BigDecimal(normalized) }.getOrDefault(BigDecimal.ZERO)
+        val fromRate = rates[from.lowercase()]?.let(BigDecimal::valueOf) ?: return "0"
+        val toRate   = rates[to.lowercase()]?.let(BigDecimal::valueOf)   ?: return "0"
         val mc = MathContext(16, RoundingMode.HALF_UP)
-        val intermediate = try { aBD.divide(fromRate, mc) } catch (e: ArithmeticException) { return "0" }
-        return intermediate.multiply(toRate, mc).stripTrailingZeros().toPlainString()
+        return runCatching {
+            aBD.divide(fromRate, mc)
+                .multiply(toRate, mc)
+                .stripTrailingZeros()
+                .toPlainString()
+        }.getOrDefault("0")
     }
 }
