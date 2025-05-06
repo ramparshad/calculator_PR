@@ -96,7 +96,7 @@ class UnitConverterViewModel @Inject constructor(
     /** Interne Konvertierungsfunktion – unverändert */
     private fun convert(input: String, a: UnitDef, b: UnitDef): String {
         val v = input.toBigDecimalOrNull() ?: return ""
-        val mc = MathContext(16, RoundingMode.HALF_UP)
+        val mc = MathContext(34, RoundingMode.HALF_UP)
 
         val result: BigDecimal = when (category) {
             "Temperature" -> {
@@ -154,8 +154,8 @@ class UnitConverterViewModel @Inject constructor(
                 }
             }
             else -> {
-                val factorA = BigDecimal.valueOf(a.factorToBase)
-                val factorB = BigDecimal.valueOf(b.factorToBase)
+                val factorA = a.factorToBase
+                val factorB = b.factorToBase
                 v.multiply(factorA, mc).divide(factorB, mc)
             }
         }
