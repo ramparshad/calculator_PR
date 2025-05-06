@@ -113,6 +113,11 @@ class CurrencyViewModel @Inject constructor(
                 recalc()
             }
         }
+
+        viewModelScope.launch {
+            currenciesWithTitles.collect {
+            }
+        }
     }
 
     /** Manuelles Refresh feuert die beiden Flows neu ab */
