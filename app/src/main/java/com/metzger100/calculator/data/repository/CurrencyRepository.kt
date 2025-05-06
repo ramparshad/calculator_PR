@@ -91,7 +91,7 @@ class CurrencyRepository @Inject constructor(
                         cachedJson ?: "{}"
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "getRatesFlow: Error during fetch → Fallback to cache", e)
+                    Log.e(TAG, "getRatesFlow: Error during fetch → Fallback to cache")
                     cachedJson ?: "{}"
                 }
             } else {
@@ -173,7 +173,7 @@ class CurrencyRepository @Inject constructor(
                         cachedJson ?: "{}"
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "getCurrenciesFlow: Error during fetch → Fallback to cache", e)
+                    Log.e(TAG, "getCurrenciesFlow: Error during fetch → Fallback to cache")
                     cachedJson ?: "{}"
                 }
             } else {
@@ -213,7 +213,7 @@ class CurrencyRepository @Inject constructor(
             val ratesObj = root.getAsJsonObject(key)
             ratesObj.entrySet().associate { it.key to it.value.asDouble }
         } catch (e: Exception) {
-            Log.e(TAG, "parseRates: JSON parsing failed", e)
+            Log.e(TAG, "parseRates: JSON parsing failed")
             emptyMap()
         }
     }
@@ -224,7 +224,7 @@ class CurrencyRepository @Inject constructor(
             .get("date").asString
             .let(LocalDate::parse)
     } catch (e: Exception) {
-        Log.e(TAG, "extractDate: JSON parsing failed", e)
+        Log.e(TAG, "extractDate: JSON parsing failed")
         null
     }
 
@@ -236,7 +236,7 @@ class CurrencyRepository @Inject constructor(
                 .map { it.key.uppercase() to it.value.asString }
                 .sortedBy { it.first }
         } catch (e: Exception) {
-            Log.e(TAG, "parseCurrencies: JSON parsing failed", e)
+            Log.e(TAG, "parseCurrencies: JSON parsing failed")
             emptyList()
         }
     }
