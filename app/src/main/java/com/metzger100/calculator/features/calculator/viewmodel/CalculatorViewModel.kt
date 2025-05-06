@@ -154,7 +154,7 @@ class CalculatorViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             uiState = uiState.copy(preview = application.getString(R.string.Calculator_Error))
-            Log.e("CalculatorViewModel", "Error during calculate", e)
+            Log.e("CalculatorViewModel", "Error during calculate")
         }
     }
 
