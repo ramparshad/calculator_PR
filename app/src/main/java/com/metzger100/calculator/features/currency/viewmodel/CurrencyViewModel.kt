@@ -59,29 +59,32 @@ class CurrencyViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val currenciesWithTitles: StateFlow<List<Pair<String, String>>> =
         refreshTrigger
+            .drop(1)
             .flatMapLatest {
                 val currentOnlineStatus = connectivityObserver.isOnline()
                 repo.getCurrenciesFlow(isOnline = currentOnlineStatus)
             }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.Lazily,
+                started = SharingStarted.Eagerly,
                 initialValue = emptyList()
             )
 
     // 6) rates reagiert auf refreshTrigger und auf Basis-Wechsel
     @OptIn(ExperimentalCoroutinesApi::class)
     val rates: StateFlow<Map<String, Double>> =
-        combine(refreshTrigger, base) { _, b -> b }
-            .flatMapLatest { b ->
-                val currentOnlineStatus = connectivityObserver.isOnline()
-                repo.getRatesFlow(base = b, isOnline = currentOnlineStatus)
-            }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.Lazily,
-                initialValue = emptyMap()
-            )
+        refreshTrigger
+            .drop(1)
+            .combine(base) { _, b -> b }
+                .flatMapLatest { b ->
+                        val currentOnlineStatus = connectivityObserver.isOnline()
+                        repo.getRatesFlow(base = b, isOnline = currentOnlineStatus)
+                    }
+                    .stateIn(
+                        scope = viewModelScope,
+                        started = SharingStarted.Eagerly,
+                        initialValue = emptyMap()
+                    )
 
     // 7) Datum der letzten API-Antwort
     private val _lastApiDate = MutableStateFlow<LocalDate?>(null)
@@ -111,11 +114,6 @@ class CurrencyViewModel @Inject constructor(
             rates.collect { rateMap ->
                 _lastApiDate.value = repo.getLastApiDateForBase(base.value)
                 recalc()
-            }
-        }
-
-        viewModelScope.launch {
-            currenciesWithTitles.collect {
             }
         }
     }
