@@ -122,10 +122,10 @@ object UnitConverterConstants {
         "Speed" to listOf(
             UnitDef(R.string.UnitConvCatSpeed_MeterPerSecond, BigDecimal(1.0)),
             UnitDef(R.string.UnitConvCatSpeed_KilometerPerSecond, BigDecimal(1000.0)),
-            UnitDef(R.string.UnitConvCatSpeed_KilometerPerHour, BigDecimal(0.2777777777777778)),
+            UnitDef(R.string.UnitConvCatSpeed_KilometerPerHour, BigDecimal(0.2777777777777777)),
             UnitDef(R.string.UnitConvCatSpeed_FootPerSecond, BigDecimal(0.3048)),
             UnitDef(R.string.UnitConvCatSpeed_MilePerHour, BigDecimal(0.44704)),
-            UnitDef(R.string.UnitConvCatSpeed_Knot, BigDecimal(0.51444444444444)),
+            UnitDef(R.string.UnitConvCatSpeed_Knot, BigDecimal(0.5144444444444444)),
             UnitDef(R.string.UnitConvCatSpeed_Mach, BigDecimal(340.29))
         ),
 
@@ -160,9 +160,9 @@ object UnitConverterConstants {
             UnitDef(R.string.UnitConvCatPressure_Bar, BigDecimal(100_000.0)),
             UnitDef(R.string.UnitConvCatPressure_Atmosphere, BigDecimal(101_325.0)),
             UnitDef(R.string.UnitConvCatPressure_Torr, BigDecimal(133.32236842105263)),
-            UnitDef(R.string.UnitConvCatPressure_MmHg, BigDecimal(133.322)),
+            UnitDef(R.string.UnitConvCatPressure_MmHg, BigDecimal(133.3223874150796)),
             UnitDef(R.string.UnitConvCatPressure_KgfPerCm2, BigDecimal(98_066.5)),
-            UnitDef(R.string.UnitConvCatPressure_PSI, BigDecimal(6894.7572931783))
+            UnitDef(R.string.UnitConvCatPressure_PSI, BigDecimal(6894.757293168361))
         ),
 
         // FREQUENCY (base = hertz)
