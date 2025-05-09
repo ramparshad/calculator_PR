@@ -42,7 +42,7 @@ android {
 }
 
 dependencies {
-    implementation(platform(libs.androidx.compose.bom.v20250400))
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.material3)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.activity.compose)
