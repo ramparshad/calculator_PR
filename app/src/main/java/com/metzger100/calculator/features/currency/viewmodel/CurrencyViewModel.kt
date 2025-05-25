@@ -15,15 +15,21 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
+import java.time.LocalDate
 import javax.inject.Inject
 
-// 1) Datenklasse für den gesamten UI‑State
+// 1) Datenklasse für den gesamten UI-State
 data class CurrencyUiState(
     val currency1: String = "USD",
     val currency2: String = "EUR",
@@ -42,15 +48,12 @@ class CurrencyViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "CurrencyViewModel"
+        private const val FIXED_BASE = "USD"
     }
 
     // monolithischer UI‑State
     var uiState by mutableStateOf(CurrencyUiState())
         private set
-
-    // 2) Basis-Währung als Flow
-    private val _base = MutableStateFlow("USD")
-    val base: StateFlow<String> = _base
 
     // 4) Refresh-Trigger: bei jeder Erhöhung dieser Zahl feuern wir die Flows neu ab
     private val refreshTrigger = MutableStateFlow(0)
@@ -70,23 +73,22 @@ class CurrencyViewModel @Inject constructor(
                 initialValue = emptyList()
             )
 
-    // 6) rates reagiert auf refreshTrigger und auf Basis-Wechsel
+    // 6) rates reagiert nur auf refreshTrigger, Basis ist stets USD
     @OptIn(ExperimentalCoroutinesApi::class)
     val rates: StateFlow<Map<String, Double>> =
         refreshTrigger
             .drop(1)
-            .combine(base) { _, b -> b }
-                .flatMapLatest { b ->
-                        val currentOnlineStatus = connectivityObserver.isOnline()
-                        repo.getRatesFlow(base = b, isOnline = currentOnlineStatus)
-                    }
-                    .stateIn(
-                        scope = viewModelScope,
-                        started = SharingStarted.Eagerly,
-                        initialValue = emptyMap()
-                    )
+            .flatMapLatest {
+                val currentOnlineStatus = connectivityObserver.isOnline()
+                repo.getRatesFlow(base = FIXED_BASE, isOnline = currentOnlineStatus)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = emptyMap()
+            )
 
-    // 7) Datum der letzten API-Antwort
+    // 7) Datum der letzten API-Antwort (für USD)
     private val _lastApiDate = MutableStateFlow<LocalDate?>(null)
     val lastApiDate: StateFlow<LocalDate?> = _lastApiDate
 
@@ -102,7 +104,6 @@ class CurrencyViewModel @Inject constructor(
                     value1 = prefs.amount1,
                     value2 = prefs.amount2
                 )
-                _base.value = prefs.currency1
                 Log.d(TAG, "init: loaded prefs → $uiState")
             }
             // Erste Initial-Abfrage
@@ -112,7 +113,7 @@ class CurrencyViewModel @Inject constructor(
         // 9) Auf jeden neuen Satz von Kursen reagieren:
         viewModelScope.launch {
             rates.collect { rateMap ->
-                _lastApiDate.value = repo.getLastApiDateForBase(base.value)
+                _lastApiDate.value = repo.getLastApiDateForBase(FIXED_BASE)
                 recalc()
             }
         }
@@ -152,7 +153,6 @@ class CurrencyViewModel @Inject constructor(
 
     fun onCurrencyChanged1(code: String) {
         uiState = uiState.copy(currency1 = code)
-        _base.value = code
         recalc()
         prefsJob?.cancel()
         prefsJob = viewModelScope.launch {
