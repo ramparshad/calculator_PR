@@ -96,36 +96,36 @@ class UnitConverterViewModel @Inject constructor(
     /** Interne Konvertierungsfunktion – unverändert */
     private fun convert(input: String, a: UnitDef, b: UnitDef): String {
         val v = input.toBigDecimalOrNull() ?: return ""
-        val mc = MathContext(16, RoundingMode.HALF_UP)
+        val mc = MathContext(18, RoundingMode.HALF_UP)
 
         val result: BigDecimal = when (category) {
             "Temperature" -> {
                 // erst alles in Celsius
                 val c = when (a.nameRes) {
                     R.string.UnitConvCatTemperature_Fahrenheit ->
-                        v.subtract(BigDecimal(32), mc)
-                            .multiply(BigDecimal(5), mc)
-                            .divide(BigDecimal(9), mc)
+                        v.subtract(BigDecimal("32"), mc)
+                            .multiply(BigDecimal("5"), mc)
+                            .divide(BigDecimal("9"), mc)
                     R.string.UnitConvCatTemperature_Kelvin ->
                         v.subtract(BigDecimal("273.15"), mc)
                     R.string.UnitConvCatTemperature_Rankine ->
                         v.subtract(BigDecimal("491.67"), mc)
-                            .multiply(BigDecimal(5), mc)
-                            .divide(BigDecimal(9), mc)
+                            .multiply(BigDecimal("5"), mc)
+                            .divide(BigDecimal("9"), mc)
                     else -> v
                 }
                 // dann in Ziel umrechnen
                 when (b.nameRes) {
                     R.string.UnitConvCatTemperature_Fahrenheit ->
-                        c.multiply(BigDecimal(9), mc)
-                            .divide(BigDecimal(5), mc)
-                            .add(BigDecimal(32), mc)
+                        c.multiply(BigDecimal("9"), mc)
+                            .divide(BigDecimal("5"), mc)
+                            .add(BigDecimal("32"), mc)
                     R.string.UnitConvCatTemperature_Kelvin ->
                         c.add(BigDecimal("273.15"), mc)
                     R.string.UnitConvCatTemperature_Rankine ->
                         c.add(BigDecimal("273.15"), mc)
-                            .multiply(BigDecimal(9), mc)
-                            .divide(BigDecimal(5), mc)
+                            .multiply(BigDecimal("9"), mc)
+                            .divide(BigDecimal("5"), mc)
                     else -> c
                 }
             }
