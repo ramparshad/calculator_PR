@@ -17,12 +17,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.metzger100.calculator.R
 import com.metzger100.calculator.features.unit.viewmodel.UnitConverterViewModel
 import com.metzger100.calculator.features.unit.ui.UnitConverterConstants.UnitDef
 
@@ -31,7 +34,6 @@ import com.metzger100.calculator.features.unit.ui.UnitConverterConstants.UnitDef
 fun UnitConverterScreen(
     viewModel: UnitConverterViewModel
 ) {
-    // 1. ein einziger State‑Zugriff
     val uiState by viewModel::uiState
 
     BoxWithConstraints(
@@ -75,7 +77,6 @@ fun UnitConverterScreen(
         ) {
             UnitConverterKeyboard(
                 onInput = { label ->
-                    // 2. Wert immer aus uiState ziehen
                     val current = if (viewModel.uiState.selectedField == 1)
                         viewModel.uiState.fromValue
                     else
@@ -128,12 +129,17 @@ fun UnitRow(
                 .padding(horizontal = 12.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val unitLabel = stringResource(labelRes)
+            val changeUnitDesc = stringResource(R.string.change_unit_content_description, unitLabel)
             Text(
                 text = stringResource(labelRes),
                 fontSize = 18.sp,
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
                     .clickable { show = true }
+                    .semantics {
+                        contentDescription = changeUnitDesc
+                    }
             )
             Spacer(Modifier.width(16.dp))
 
@@ -207,7 +213,13 @@ fun UnitSelectorDialogRV(
                                 override fun getItemCount() = units.size
                                 override fun onBindViewHolder(holder: UnitViewHolder, position: Int) {
                                     val unit = units[position]
-                                    holder.textView.text = holder.textView.context.getString(unit.nameRes)
+                                    val unitName = holder.textView.context.getString(unit.nameRes)
+                                    holder.textView.text = unitName
+
+                                    holder.textView.contentDescription = holder.textView.context.getString(
+                                        R.string.select_unit_content_description, unitName
+                                    )
+
                                     holder.itemView.setOnClickListener {
                                         onUnitSelected(unit)
                                     }

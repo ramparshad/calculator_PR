@@ -26,6 +26,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -38,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.metzger100.calculator.R
 import com.metzger100.calculator.data.local.entity.CalculationEntity
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewModel
@@ -118,12 +120,16 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = { keyboardVisible = !keyboardVisible }) {
+                            val desc = if (keyboardVisible)
+                                stringResource(R.string.hide_keyboard)
+                            else
+                                stringResource(R.string.show_keyboard)
                             Icon(
                                 imageVector = if (keyboardVisible)
                                     Icons.Default.KeyboardArrowDown
                                 else
                                     Icons.Default.KeyboardArrowUp,
-                                contentDescription = "Toggle Keyboard",
+                                contentDescription = desc,
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }

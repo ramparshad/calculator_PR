@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -238,11 +240,15 @@ private fun CurrencyRow(
                 .padding(horizontal = 12.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val changeCurrencyDesc = stringResource(R.string.change_currency_content_description, currency)
             Text(
                 text = currency,
                 fontSize = 18.sp,
                 modifier = Modifier
                     .clickable { showDialog = true }
+                    .semantics {
+                        contentDescription = changeCurrencyDesc
+                    }
             )
             Spacer(Modifier.width(16.dp))
             Text(
@@ -322,6 +328,11 @@ fun CurrencySelectorDialogRV(
                                     val linearLayout = holder.itemView as LinearLayout
                                     val textView = linearLayout.getChildAt(0) as TextView
                                     textView.text = title
+
+                                    textView.contentDescription = textView.context.getString(
+                                        R.string.select_currency_content_description, title
+                                    )
+
                                     holder.itemView.setOnClickListener { onCurrencySelected(code) }
                                 }
                             }

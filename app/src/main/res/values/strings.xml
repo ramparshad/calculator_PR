@@ -17,6 +17,47 @@
     <string name="Back">Back</string>
     <string name="Snackbar_CurRefreshData">Info: Rates update automatically, unless the Currency tab was open at %1$s local time. Manual refresh is only needed in that case.</string>
     <string name="Snackbar_CurRefreshData_Dismiss">Dismiss</string>
+    <string name="show_keyboard">Show keyboard</string>
+    <string name="hide_keyboard">Hide keyboard</string>
+    <string name="select_unit_content_description">Select unit %1$s</string>
+    <string name="change_unit_content_description">Change unit %1$s</string>
+    <string name="select_currency_content_description">Select currency %1$s</string>
+    <string name="change_currency_content_description">Change currency %1$s</string>
+
+    <!-- Calculator keyboard button contentDescriptions -->
+    <string name="key_clear">Clear</string>
+    <string name="key_backspace">Backspace</string>
+    <string name="key_percent">Percent</string>
+    <string name="key_divide">Divide</string>
+    <string name="key_multiply">Multiply</string>
+    <string name="key_minus">Minus</string>
+    <string name="key_plus">Plus</string>
+    <string name="key_decimal_point">Decimal point</string>
+    <string name="key_equals">Equals</string>
+    <string name="key_switch_mode">Switch mode</string>
+    <!-- Scientific extra -->
+    <string name="key_inverse">Inverse</string>
+    <string name="key_degree">Degree mode</string>
+    <string name="key_radian">Radian mode</string>
+    <string name="key_power">Power</string>
+    <string name="key_log10">Log base 10</string>
+    <string name="key_exp10">Ten to the power of</string>
+    <string name="key_ln">Natural logarithm</string>
+    <string name="key_exp">Exponential</string>
+    <string name="key_left_paren">Left parenthesis</string>
+    <string name="key_right_paren">Right parenthesis</string>
+    <string name="key_square">Square</string>
+    <string name="key_sqrt">Square root</string>
+    <string name="key_reciprocal">Reciprocal</string>
+    <string name="key_factorial">Factorial</string>
+    <string name="key_pi">Pi</string>
+    <string name="key_eulers_number">Euler\'s number</string>
+    <string name="key_sin">Sine</string>
+    <string name="key_sin_inverse">Inverse sine</string>
+    <string name="key_cos">Cosine</string>
+    <string name="key_cos_inverse">Inverse cosine</string>
+    <string name="key_tan">Tangent</string>
+    <string name="key_tan_inverse">Inverse tangent</string>
 
     <!-- Unit Categories -->
     <string name="UnitConvCat_Length">Length</string>

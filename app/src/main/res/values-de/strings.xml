@@ -17,6 +17,47 @@
 	<string name="Back">Zurück</string>
 	<string name="Snackbar_CurRefreshData">Info: Kurse werden automatisch aktualisiert, außer wenn der Währungs-Tab um %1$s Ortszeit bereits geöffnet ist. Manuelles Aktualisieren ist nur dann nötig.</string>
 	<string name="Snackbar_CurRefreshData_Dismiss">Verwerfen</string>
+	<string name="show_keyboard">Tastatur anzeigen</string>
+	<string name="hide_keyboard">Tastatur verstecken</string>
+	<string name="select_unit_content_description">Wähle Einheit %1$s</string>
+	<string name="change_unit_content_description">Ändere Einheit %1$s</string>
+	<string name="select_currency_content_description">Wähle Währung %1$s</string>
+	<string name="change_currency_content_description">Ändere Währung %1$s</string>
+
+	<!-- Calculator keyboard button contentDescriptions (German) -->
+	<string name="key_clear">Löschen</string>
+	<string name="key_backspace">Rücktaste</string>
+	<string name="key_percent">Prozent</string>
+	<string name="key_divide">Geteilt</string>
+	<string name="key_multiply">Mal</string>
+	<string name="key_minus">Minus</string>
+	<string name="key_plus">Plus</string>
+	<string name="key_decimal_point">Komma</string>
+	<string name="key_equals">Gleich</string>
+	<string name="key_switch_mode">Modus wechseln</string>
+	<!-- Scientific extra -->
+	<string name="key_inverse">Inverse</string>
+	<string name="key_degree">Gradmodus</string>
+	<string name="key_radian">Bogenmaß-Modus</string>
+	<string name="key_power">Potenz</string>
+	<string name="key_log10">Logarithmus zur Basis 10</string>
+	<string name="key_exp10">Zehn hoch</string>
+	<string name="key_ln">Natürlicher Logarithmus</string>
+	<string name="key_exp">Exponentiell</string>
+	<string name="key_left_paren">Klammer auf</string>
+	<string name="key_right_paren">Klammer zu</string>
+	<string name="key_square">Quadrat</string>
+	<string name="key_sqrt">Quadratwurzel</string>
+	<string name="key_reciprocal">Kehrwert</string>
+	<string name="key_factorial">Fakultät</string>
+	<string name="key_pi">Pi</string>
+	<string name="key_eulers_number">Eulersche Zahl</string>
+	<string name="key_sin">Sinus</string>
+	<string name="key_sin_inverse">Arkussinus</string>
+	<string name="key_cos">Kosinus</string>
+	<string name="key_cos_inverse">Arkuskosinus</string>
+	<string name="key_tan">Tangens</string>
+	<string name="key_tan_inverse">Arkustangens</string>
 
 	<!-- Unit Categories -->
 	<string name="UnitConvCat_Length">Länge</string>
