@@ -1,5 +1,6 @@
 package com.metzger100.calculator.ui.navigation
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -15,19 +16,30 @@ import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.unit.ui.UnitConverterOverviewScreen
 import com.metzger100.calculator.features.unit.ui.UnitConverterScreen
 import com.metzger100.calculator.features.unit.viewmodel.UnitConverterViewModel
+import kotlinx.coroutines.CoroutineScope
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
     calculatorViewModel: CalculatorViewModel,
-    currencyViewModel: CurrencyViewModel
+    currencyViewModel: CurrencyViewModel,
+    snackbarHostState: SnackbarHostState,
+    scope: CoroutineScope
 ) {
     NavHost(navController, startDestination = NavItem.Calculator.route) {
         composable(NavItem.Calculator.route) {
-            CalculatorScreen(viewModel = calculatorViewModel)
+            CalculatorScreen(
+                viewModel = calculatorViewModel,
+                snackbarHostState = snackbarHostState,
+                coroutineScope = scope
+            )
         }
         composable(NavItem.Currency.route) {
-            CurrencyConverterScreen(viewModel = currencyViewModel)
+            CurrencyConverterScreen(
+                viewModel = currencyViewModel,
+                snackbarHostState = snackbarHostState,
+                coroutineScope = scope
+            )
         }
         composable(NavItem.Units.route) {
             UnitConverterOverviewScreen(navController)
@@ -40,7 +52,9 @@ fun NavGraph(
         ) {
             val unitViewModel: UnitConverterViewModel = hiltViewModel()
             UnitConverterScreen(
-                viewModel = unitViewModel
+                viewModel = unitViewModel,
+                snackbarHostState = snackbarHostState,
+                coroutineScope = scope
             )
         }
     }

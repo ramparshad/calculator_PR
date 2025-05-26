@@ -1,12 +1,15 @@
 package com.metzger100.calculator.features.unit.ui
 
 import android.annotation.SuppressLint
+import android.content.ClipData
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,6 +19,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -28,11 +33,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.unit.viewmodel.UnitConverterViewModel
 import com.metzger100.calculator.features.unit.ui.UnitConverterConstants.UnitDef
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun UnitConverterScreen(
-    viewModel: UnitConverterViewModel
+    viewModel: UnitConverterViewModel,
+    snackbarHostState: SnackbarHostState,
+    coroutineScope: CoroutineScope
 ) {
     val uiState by viewModel::uiState
 
@@ -55,7 +64,9 @@ fun UnitConverterScreen(
                 units          = viewModel.availableUnits,
                 onUnitSelected = viewModel::onFromUnitChanged,
                 onClick        = { viewModel.onSelectField(1) },
-                formatNumber   = { str, short -> viewModel.formatNumber(str, short) }
+                formatNumber   = { str, short -> viewModel.formatNumber(str, short) },
+                snackbarHostState = snackbarHostState,
+                coroutineScope = coroutineScope
             )
             Spacer(Modifier.height(8.dp))
             UnitRow(
@@ -65,7 +76,9 @@ fun UnitConverterScreen(
                 units          = viewModel.availableUnits,
                 onUnitSelected = viewModel::onToUnitChanged,
                 onClick        = { viewModel.onSelectField(2) },
-                formatNumber   = { str, short -> viewModel.formatNumber(str, short) }
+                formatNumber   = { str, short -> viewModel.formatNumber(str, short) },
+                snackbarHostState = snackbarHostState,
+                coroutineScope = coroutineScope
             )
         }
 
@@ -107,7 +120,9 @@ fun UnitRow(
     units: List<UnitDef>,
     onUnitSelected: (UnitDef) -> Unit,
     onClick: () -> Unit,
-    formatNumber: (String, Boolean) -> String
+    formatNumber: (String, Boolean) -> String,
+    snackbarHostState: SnackbarHostState,
+    coroutineScope: CoroutineScope
 ) {
     var show by remember { mutableStateOf(false) }
     val borderM = if (isSel) Modifier.border(
@@ -115,6 +130,8 @@ fun UnitRow(
         MaterialTheme.colorScheme.primary,
         MaterialTheme.shapes.medium
     ) else Modifier
+
+    val clipboard = LocalClipboard.current
 
     Card(
         Modifier
@@ -158,6 +175,30 @@ fun UnitRow(
                 softWrap = true,
                 maxLines = Int.MAX_VALUE
             )
+
+            if (value.isNotEmpty() && value != "0") {
+                val snackDesc = stringResource(R.string.value_copied)
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            clipboard.setClipEntry(
+                                ClipEntry(
+                                    ClipData.newPlainText("Currency Value", value)
+                                )
+                            )
+                            snackbarHostState.showSnackbar(
+                                message = snackDesc,
+                                withDismissAction = true
+                            )
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = stringResource(R.string.copy_value)
+                    )
+                }
+            }
         }
     }
 

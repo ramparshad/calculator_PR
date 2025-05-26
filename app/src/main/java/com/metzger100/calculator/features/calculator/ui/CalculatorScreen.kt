@@ -1,6 +1,7 @@
 package com.metzger100.calculator.features.calculator.ui
 
 import android.annotation.SuppressLint
+import android.content.ClipData
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.runtime.*
@@ -24,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -43,10 +47,16 @@ import com.metzger100.calculator.R
 import com.metzger100.calculator.data.local.entity.CalculationEntity
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
+fun CalculatorScreen(
+    viewModel: CalculatorViewModel = hiltViewModel(),
+    snackbarHostState: SnackbarHostState,
+    coroutineScope: CoroutineScope
+) {
     var keyboardVisible by remember { mutableStateOf(false) }
     val uiState by viewModel::uiState
 
@@ -63,6 +73,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
     val reversedHistory by remember(viewModel.history) {
         derivedStateOf { viewModel.history.reversed() }
     }
+
+    val clipboard = LocalClipboard.current
 
     BoxWithConstraints(
         modifier = Modifier
@@ -190,7 +202,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                                     }
                                 }
                             }
-
                             if (uiState.preview.isNotEmpty()) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
@@ -206,6 +217,31 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
+                            }
+                        }
+                        if (uiState.input.isNotEmpty() && uiState.preview.isEmpty()) {
+                            val desc = stringResource(R.string.copy_result)
+                            val snackDesc = stringResource(R.string.result_copied)
+                            IconButton(
+                                onClick = {
+                                    coroutineScope.launch {
+                                        clipboard.setClipEntry(
+                                            ClipEntry(
+                                                ClipData.newPlainText(
+                                                    "Calculator Result",
+                                                    viewModel.formatNumber(
+                                                        uiState.input,
+                                                        shortMode = false,
+                                                        inputLine = false
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        snackbarHostState.showSnackbar(snackDesc, withDismissAction = true)
+                                    }
+                                },
+                            ) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = desc)
                             }
                         }
                     }

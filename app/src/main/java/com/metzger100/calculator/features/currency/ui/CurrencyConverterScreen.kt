@@ -2,6 +2,7 @@
 package com.metzger100.calculator.features.currency.ui
 
 import android.annotation.SuppressLint
+import android.content.ClipData
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -10,12 +11,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -32,7 +37,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.CurrencyConverterConstants.MajorCurrencyCodes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -42,7 +49,11 @@ import java.time.format.DateTimeFormatter
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
+fun CurrencyConverterScreen(
+    viewModel: CurrencyViewModel = hiltViewModel(),
+    snackbarHostState: SnackbarHostState,
+    coroutineScope: CoroutineScope
+) {
     // gesamter UI‑State
     val uiState by viewModel::uiState
 
@@ -116,7 +127,9 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
                 isSelected  = uiState.selectedField == 1,
                 currencies  = codeList,
                 onCurrencySelected = { viewModel.onCurrencyChanged1(it) },
-                onClick     = { viewModel.onSelectField(1) }
+                onClick     = { viewModel.onSelectField(1) },
+                snackbarHostState = snackbarHostState,
+                coroutineScope    = coroutineScope
             )
             Spacer(Modifier.height(8.dp))
             CurrencyRow(
@@ -125,7 +138,9 @@ fun CurrencyConverterScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
                 isSelected  = uiState.selectedField == 2,
                 currencies  = codeList,
                 onCurrencySelected = { viewModel.onCurrencyChanged2(it) },
-                onClick     = { viewModel.onSelectField(2) }
+                onClick     = { viewModel.onSelectField(2) },
+                snackbarHostState = snackbarHostState,
+                coroutineScope    = coroutineScope
             )
         }
 
@@ -220,12 +235,16 @@ private fun CurrencyRow(
     isSelected: Boolean,
     currencies: List<Pair<String, String>>,
     onCurrencySelected: (String) -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    snackbarHostState: SnackbarHostState,
+    coroutineScope: CoroutineScope
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val borderModifier = if (isSelected) {
         Modifier.border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.medium)
     } else Modifier
+
+    val clipboard = LocalClipboard.current
 
     Card(
         modifier = Modifier
@@ -259,6 +278,29 @@ private fun CurrencyRow(
                 softWrap = true,
                 maxLines = Int.MAX_VALUE
             )
+            if (value.isNotEmpty() && value != "0") {
+                val snackDesc = stringResource(R.string.value_copied)
+                IconButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            clipboard.setClipEntry(
+                                ClipEntry(
+                                    ClipData.newPlainText("Currency Value", value)
+                                )
+                            )
+                            snackbarHostState.showSnackbar(
+                                message = snackDesc,
+                                withDismissAction = true
+                            )
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = stringResource(R.string.copy_value)
+                    )
+                }
+            }
         }
     }
 

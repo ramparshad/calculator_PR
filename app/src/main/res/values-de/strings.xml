@@ -19,6 +19,10 @@
 	<string name="Snackbar_CurRefreshData_Dismiss">Verwerfen</string>
 	<string name="show_keyboard">Tastatur anzeigen</string>
 	<string name="hide_keyboard">Tastatur verstecken</string>
+	<string name="copy_result">Ergebnis kopieren</string>
+	<string name="result_copied">Ergebnis kopiert</string>
+	<string name="copy_value">Wert kopieren</string>
+	<string name="value_copied">Wert kopiert</string>
 	<string name="select_unit_content_description">Wähle Einheit %1$s</string>
 	<string name="change_unit_content_description">Ändere Einheit %1$s</string>
 	<string name="select_currency_content_description">Wähle Währung %1$s</string>

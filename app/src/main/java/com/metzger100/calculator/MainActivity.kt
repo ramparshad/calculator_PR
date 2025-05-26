@@ -14,23 +14,23 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.navigation.compose.rememberNavController
-import com.metzger100.calculator.ui.navigation.BottomNavBar
-import com.metzger100.calculator.ui.navigation.NavGraph
-import dagger.hilt.android.HiltAndroidApp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewModel
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
+import com.metzger100.calculator.ui.navigation.BottomNavBar
+import com.metzger100.calculator.ui.navigation.NavGraph
 import com.metzger100.calculator.ui.theme.CalculatorTheme
 import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
@@ -124,7 +124,9 @@ fun AppContent() {
                 NavGraph(
                     navController = navController,
                     calculatorViewModel = CalcViewModel,
-                    currencyViewModel = CurViewModel
+                    currencyViewModel = CurViewModel,
+                    snackbarHostState = snackbarHostState,
+                    scope = scope
                 )
             }
         }
