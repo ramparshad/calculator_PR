@@ -5,6 +5,32 @@ import java.math.RoundingMode
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class FormatWithCursorMappingResult(
+    val formatted: String,
+    val inputToDisplay: IntArray, // inputPos → displayPos
+    val displayToInput: IntArray  // displayPos → inputPos
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FormatWithCursorMappingResult
+
+        if (formatted != other.formatted) return false
+        if (!inputToDisplay.contentEquals(other.inputToDisplay)) return false
+        if (!displayToInput.contentEquals(other.displayToInput)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = formatted.hashCode()
+        result = 31 * result + inputToDisplay.contentHashCode()
+        result = 31 * result + displayToInput.contentHashCode()
+        return result
+    }
+}
+
 @Singleton
 class NumberFormatService @Inject constructor() {
 
@@ -13,32 +39,31 @@ class NumberFormatService @Inject constructor() {
     private val upper = BigDecimal("1000000000")
 
     /**
-     * vereinheitlichte Format‑Methode für alle drei Screens.
+     * Main number formatting method used for all screens.
      *
-     * @param input roher Eingabe‑String (Zahl oder Ausdruck)
-     * @param shortMode wenn true: Currency‑Kurzmodus (immer 2 Dez), sonst Voll‑Modus
-     * @param inputLine wenn true: Calculator-InputZeile immer unverarbeitet, da man sonst den Input nur schlecht lesen kann.
+     * @param input Raw input string (number or expression)
+     * @param shortMode If true: Currency short mode (always 2 decimals), else full mode
+     * @param inputLine If true: Calculator input line stays unprocessed for better readability
      */
     fun formatNumber(input: String, shortMode: Boolean, inputLine: Boolean): String {
-        // Calculator Input Line wird nicht formatiert, nur die ResultPreview
+        // Do not format the Calculator input line, only process ResultPreview
         if (inputLine) {
             val base = input.ifEmpty { "0" }
-            return replaceOperators(base)
+            return replaceOperatorsOrMap(base, withMapping = false) as String
         }
 
-        // 1) Parsen oder Early‑Return
+        // 1) Try to parse as number or early return
         val bigDec = try {
             BigDecimal(input)
         } catch (e: NumberFormatException) {
-            // leeres input → "0", sonst original + Operator‑Replacement
             val base = input.ifEmpty { "0" }
-            return replaceOperators(base)
+            return replaceOperatorsOrMap(base, withMapping = false) as String
         }
 
-        // 2) Sonderfall Null
+        // 2) Special case: Zero
         if (bigDec.signum() == 0) return "0"
 
-        // 3) Spezialfall viele führende Nullen nach dem Komma → Exponential‑Form
+        // 3) Special case: Many leading zeros after decimal point → exponential format
         smallRegex.matchEntire(input)?.let { m ->
             val sign      = m.groupValues[1]
             val zeroCount = m.groupValues[2].length
@@ -49,30 +74,38 @@ class NumberFormatService @Inject constructor() {
             else
                 digits
             val sci = "$sign$mantissa×10${toSuperscript(exponent)}"
-            return replaceOperators(sci)
+            return replaceOperatorsOrMap(sci, withMapping = false) as String
         }
 
-        // 4) Normale Zahl
+        // 4) Normal number formatting
         val formatted = if (shortMode) {
-            // Currency‑Kurzmodus: immer 2 Dezimalstellen
+            // Currency short mode: always 2 decimals
             val rounded = bigDec.setScale(2, RoundingMode.HALF_UP)
             groupOrSci(rounded)
         } else {
-            // Vollmodus (Calculator & Unit & Currency‑Voll): keine Rundung,
-            // Sci‑Notation nur bei extremen Werten
+            // Full mode: No rounding, scientific notation only for extreme values
             groupOrSci(bigDec.stripTrailingZeros())
         }
 
-        // 5) Operator‑Replacement (macht nur bei Calculator etwas)
+        // 5) Operator replacement (only relevant for Calculator)
         return replaceOperators(formatted)
     }
 
-    /** gruppiert oder liefert wissenschaftliche Notation zurück */
+    /**
+     * Formats input and provides a mapping from input cursor to display cursor and back.
+     */
+    fun formatNumberWithCursorMapping(
+        input: String
+    ): FormatWithCursorMappingResult {
+        val base = input.ifEmpty { "0" }
+        return replaceOperatorsWithMapping(base)
+    }
+
+    /** Groups numbers or returns scientific notation if appropriate */
     private fun groupOrSci(
         bd: BigDecimal
     ): String {
         val absBd = bd.abs()
-        // precision/scale/exponent auf dem normierten Wert
         val norm  = bd.stripTrailingZeros()
         val prec  = norm.precision()
         val scale = norm.scale()
@@ -85,7 +118,7 @@ class NumberFormatService @Inject constructor() {
         else groupIntegerPart(bd.toPlainString())
     }
 
-    /** baut Mantisse×10^Exp mit Superscript‑Exponent */
+    /** Builds mantissa×10^exp with superscript exponent */
     private fun buildSci(signum: Int, unscaled: String, exp: Int): String {
         val mantissa = if (unscaled.length > 1)
             "${unscaled[0]}.${unscaled.substring(1)}"
@@ -95,7 +128,7 @@ class NumberFormatService @Inject constructor() {
         return "$signChar$mantissa×10${toSuperscript(exp)}"
     }
 
-    /** gruppiert den Integer‑Teil in Dreierblöcke, erhält Dezimalteil unverändert */
+    /** Groups integer part in blocks of three, leaves decimals unchanged */
     private fun groupIntegerPart(orig: String): String {
         val negative = orig.startsWith("-")
         val parts    = orig.trimStart('-').split('.', limit = 2)
@@ -110,7 +143,7 @@ class NumberFormatService @Inject constructor() {
         }
     }
 
-    /** Unicode‑Hochstellung für Exponenten, z. B. -6 → ⁻⁶ */
+    /** Converts an integer exponent to unicode superscript, e.g., -6 → ⁻⁶ */
     private fun toSuperscript(exp: Int): String {
         val sup = mapOf(
             '0' to '⁰','1' to '¹','2' to '²','3' to '³','4' to '⁴',
@@ -119,30 +152,91 @@ class NumberFormatService @Inject constructor() {
         return exp.toString().map { sup[it] ?: it }.joinToString("")
     }
 
-    /** ersetzt Rechen‑Operatoren gemäß Calculator‑Display */
-    private fun replaceOperators(expr: String): String =
-        expr
-            .replace("/", "÷")
-            .replace("*", "×")
-            .replace("-", "−")
-            .replace("RECIPROCAL(", "1/(")
-            .replace("EXP(", "e^(")
-            .replace("PI()", "π")
-            .replace("E()", "e")
-            .replace("SQRT(", "√(")
-            .replace("FACT(", "x!(")
-            .replace("LOG10(", "lg(")
-            .replace("LOG(", "ln(")
-            .replace("ASINR(", "sin⁻¹(")
-            .replace("ACOSR(", "cos⁻¹(")
-            .replace("ATANR(", "tan⁻¹(")
-            .replace("ASIN(", "sin⁻¹(")
-            .replace("ACOS(", "cos⁻¹(")
-            .replace("ATAN(", "tan⁻¹(")
-            .replace("SINR(", "sin(")
-            .replace("COSR(", "cos(")
-            .replace("TANR(", "tan(")
-            .replace("SIN(", "sin(")
-            .replace("COS(", "cos(")
-            .replace("TAN(", "tan(")
+    /**
+     * Shared replacement logic for both display replacement and cursor mapping.
+     * If withMapping=false: Only returns replaced string (like replaceOperators).
+     * If withMapping=true: Returns FormatWithCursorMappingResult with full cursor mapping.
+     */
+
+    private fun replaceOperators(input: String): String =
+        replaceOperatorsOrMap(input, withMapping = false) as String
+
+    private fun replaceOperatorsWithMapping(input: String): FormatWithCursorMappingResult =
+        replaceOperatorsOrMap(input, withMapping = true) as FormatWithCursorMappingResult
+
+    private fun replaceOperatorsOrMap(input: String, withMapping: Boolean): Any {
+        if (!withMapping) {
+            // Simple string replacement
+            var result = input
+            for ((from, to) in replacements) {
+                result = result.replace(from, to)
+            }
+            return result
+        } else {
+            // Replacement + mapping for cursor positions
+            val inputToDisplay = IntArray(input.length + 1)
+            val displayToInputList = mutableListOf<Int>()
+            var inPos = 0
+            var outPos = 0
+            val out = StringBuilder()
+            while (inPos < input.length) {
+                var replaced = false
+                for ((from, to) in replacements) {
+                    if (input.startsWith(from, inPos)) {
+                        repeat(from.length) {
+                            inputToDisplay[inPos + it] = outPos
+                        }
+                        repeat(to.length) {
+                            displayToInputList.add(inPos)
+                        }
+                        out.append(to)
+                        inPos += from.length
+                        outPos += to.length
+                        replaced = true
+                        break
+                    }
+                }
+                if (!replaced) {
+                    inputToDisplay[inPos] = outPos
+                    displayToInputList.add(inPos)
+                    out.append(input[inPos])
+                    inPos += 1
+                    outPos += 1
+                }
+            }
+            inputToDisplay[input.length] = outPos
+            displayToInputList.add(input.length)
+            return FormatWithCursorMappingResult(
+                out.toString(),
+                inputToDisplay,
+                displayToInputList.toIntArray()
+            )
+        }
+    }
+
+    private val replacements = listOf(
+        "RECIPROCAL(" to "1/(",
+        "EXP(" to "e^(",
+        "PI()" to "π",
+        "E()" to "e",
+        "SQRT(" to "√(",
+        "FACT(" to "x!(",
+        "LOG10(" to "lg(",
+        "LOG(" to "ln(",
+        "ASINR(" to "sin⁻¹(",
+        "ACOSR(" to "cos⁻¹(",
+        "ATANR(" to "tan⁻¹(",
+        "ASIN(" to "sin⁻¹(",
+        "ACOS(" to "cos⁻¹(",
+        "ATAN(" to "tan⁻¹(",
+        "SINR(" to "sin(",
+        "COSR(" to "cos(",
+        "TANR(" to "tan(",
+        "SIN(" to "sin(",
+        "COS(" to "cos(",
+        "TAN(" to "tan(",
+        "/" to "÷",
+        "*" to "×",
+        "-" to "−"
+    )
 }

@@ -1,12 +1,19 @@
 package com.metzger100.calculator.features.calculator.ui
 
 import android.annotation.SuppressLint
-import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -15,14 +22,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.data.local.entity.CalculationEntity
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewModel
@@ -31,11 +46,18 @@ import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewMod
 @Composable
 fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
     var keyboardVisible by remember { mutableStateOf(false) }
-
-    // observe the single uiState
     val uiState by viewModel::uiState
 
-    // reversed history snapshot
+    var layoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val blinkAlpha by rememberInfiniteTransition().animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 500, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
     val reversedHistory by remember(viewModel.history) {
         derivedStateOf { viewModel.history.reversed() }
     }
@@ -58,16 +80,12 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                     .clipToBounds()
             ) {
                 val context = LocalContext.current
-
                 AndroidView(
                     factory = {
                         RecyclerView(context).apply {
-                            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, /*reverseLayout=*/ true)
-                            adapter = CalculationAdapter(
-                                viewModel,
-                                textColor,
-                                resultColor
-                            )
+                            layoutManager =
+                                LinearLayoutManager(context, LinearLayoutManager.VERTICAL, true)
+                            adapter = CalculationAdapter(viewModel, textColor, resultColor)
                             clipToPadding = true
                             clipChildren = true
                         }
@@ -75,11 +93,11 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
                     update = { rv ->
                         val adapter = rv.adapter as CalculationAdapter
                         adapter.updateData(reversedHistory)
-                        if (reversedHistory.isNotEmpty()) {
-                            rv.scrollToPosition(0)
-                        }
+                        if (reversedHistory.isNotEmpty()) rv.scrollToPosition(0)
                     },
-                    modifier = Modifier.fillMaxSize().clipToBounds()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clipToBounds()
                 )
             }
 
@@ -87,54 +105,110 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
 
             // Input & preview card
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { keyboardVisible = true },
+                modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { keyboardVisible = !keyboardVisible }) {
-                        Icon(
-                            imageVector = if (keyboardVisible) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-                            contentDescription = "Toggle Keyboard",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Column(
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalAlignment = Alignment.End
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (uiState.preview.isNotEmpty()) {
-                            Text(
-                                text = viewModel.formatNumber(uiState.input, shortMode = false, inputLine = true),
-                                style = MaterialTheme.typography.headlineLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "= ${viewModel.formatNumber(uiState.preview, shortMode = false, inputLine = false)}",
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Text(
-                                text = viewModel.formatNumber(uiState.input, shortMode = false, inputLine = true),
-                                style = MaterialTheme.typography.headlineLarge,
-                                color = MaterialTheme.colorScheme.onSurface
+                        IconButton(onClick = { keyboardVisible = !keyboardVisible }) {
+                            Icon(
+                                imageVector = if (keyboardVisible)
+                                    Icons.Default.KeyboardArrowDown
+                                else
+                                    Icons.Default.KeyboardArrowUp,
+                                contentDescription = "Toggle Keyboard",
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 16.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            val formatRes = viewModel.numberFormatService.formatNumberWithCursorMapping(
+                                uiState.input
+                            )
+                            val formattedInput = formatRes.formatted
+                            val safeInputCursor = uiState.cursor.coerceIn(0, formatRes.inputToDisplay.size - 1)
+                            val displayCursor = formatRes.inputToDisplay[safeInputCursor].coerceIn(0, formattedInput.length)
+
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                BasicTextField(
+                                    value = TextFieldValue(
+                                        text = formattedInput,
+                                        selection = TextRange(displayCursor)
+                                    ),
+                                    onValueChange = {
+                                        val newDisplayCursor = it.selection.start.coerceIn(0, formatRes.displayToInput.size - 1)
+                                        val newInputCursor = formatRes.displayToInput[newDisplayCursor].coerceIn(0, uiState.input.length)
+                                        viewModel.onCursorChange(newInputCursor)
+                                    },
+                                    readOnly = true,
+                                    textStyle = MaterialTheme.typography.headlineLarge.copy(
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        textAlign = TextAlign.End,
+                                        letterSpacing = 3.sp
+                                    ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onTextLayout = { layoutResult = it }
+                                )
+
+                                if (formattedInput != "0") {
+                                    layoutResult?.let { textLayout ->
+                                        runCatching { textLayout.getCursorRect(displayCursor) }
+                                            .getOrNull()
+                                            ?.let { cursorRect ->
+                                                val canvasColor = MaterialTheme.colorScheme.onSurface
+                                                val extraOffsetPx = with(LocalDensity.current) {
+                                                    if (displayCursor == formattedInput.length) 2.dp.toPx() else 0f
+                                                }
+                                                Canvas(modifier = Modifier.matchParentSize()) {
+                                                    drawLine(
+                                                        color = canvasColor,
+                                                        start = Offset(cursorRect.left + extraOffsetPx, cursorRect.top),
+                                                        end = Offset(cursorRect.left + extraOffsetPx, cursorRect.bottom),
+                                                        strokeWidth = 2.dp.toPx(),
+                                                        alpha = blinkAlpha
+                                                    )
+                                                }
+                                            }
+                                    }
+                                }
+                            }
+
+                            if (uiState.preview.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "= ${viewModel.formatNumber(
+                                        uiState.preview,
+                                        shortMode = false,
+                                        inputLine = false
+                                    )}",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                    if (!keyboardVisible) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { keyboardVisible = true }
+                        )
                     }
                 }
             }
@@ -175,13 +249,12 @@ fun CalculatorScreen(viewModel: CalculatorViewModel = hiltViewModel()) {
     }
 }
 
-// RecyclerView Adapter & ViewHolder remain unchanged except for input/result via uiState
+// RecyclerView Adapter & ViewHolder remain unchanged...
 private class CalculationAdapter(
     private val viewModel: CalculatorViewModel,
     private val textColor: Int,
     private val resultColor: Int
 ) : RecyclerView.Adapter<CalculationViewHolder>() {
-
     private var items: List<CalculationEntity> = emptyList()
 
     fun updateData(newItems: List<CalculationEntity>) {
@@ -215,7 +288,6 @@ private class CalculationAdapter(
     }
 
     override fun getItemCount(): Int = items.size
-
     override fun onBindViewHolder(holder: CalculationViewHolder, position: Int) {
         val entry = items[position]
         holder.inputView.text = viewModel.formatNumber(entry.input, shortMode = false, inputLine = false)
@@ -223,24 +295,20 @@ private class CalculationAdapter(
     }
 }
 
+private class CalculationViewHolder(
+    view: android.view.View,
+    val inputView: TextView,
+    val resultView: TextView
+) : RecyclerView.ViewHolder(view)
+
 class CalculationDiffCallback(
     private val oldList: List<CalculationEntity>,
     private val newList: List<CalculationEntity>
 ) : DiffUtil.Callback() {
     override fun getOldListSize(): Int = oldList.size
     override fun getNewListSize(): Int = newList.size
-
-    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        return oldList[oldItemPosition].id == newList[newItemPosition].id
-    }
-
-    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        return oldList[oldItemPosition] == newList[newItemPosition]
-    }
+    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
+        oldList[oldItemPosition].id == newList[newItemPosition].id
+    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
+        oldList[oldItemPosition] == newList[newItemPosition]
 }
-
-private class CalculationViewHolder(
-    view: View,
-    val inputView: TextView,
-    val resultView: TextView
-) : RecyclerView.ViewHolder(view)
