@@ -96,7 +96,7 @@ class UnitConverterViewModel @Inject constructor(
     /** Interne Konvertierungsfunktion – unverändert */
     private fun convert(input: String, a: UnitDef, b: UnitDef): String {
         val v = input.toBigDecimalOrNull() ?: return ""
-        val mc = MathContext(34, RoundingMode.HALF_UP)
+        val mc = MathContext(16, RoundingMode.HALF_UP)
 
         val result: BigDecimal = when (category) {
             "Temperature" -> {
