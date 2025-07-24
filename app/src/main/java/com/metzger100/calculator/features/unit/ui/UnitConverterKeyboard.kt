@@ -1,7 +1,16 @@
 package com.metzger100.calculator.features.unit.ui
 
+import android.media.AudioManager
+import android.os.Build
+import android.os.VibrationEffect
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material3.Icon
@@ -13,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import splitties.systemservices.audioManager
+import splitties.systemservices.vibrator
 
 @Composable
 fun UnitConverterKeyboard(
@@ -50,6 +61,22 @@ fun UnitConverterKeyboard(
                             label = label,
                             modifier = Modifier.weight(1f),
                             onClick = {
+
+                                // Vibrate & sound effect -----------------------------------------------------------
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    vibrator.vibrate(50)
+                                }
+
+                                audioManager.playSoundEffect(
+                                    AudioManager.FX_KEY_CLICK,
+                                    1.0f // Full volume
+                                )
+                                //---------------------------------------------------------------
+
+
                                 when (label) {
                                     "C" -> onClear()
                                     "←" -> onBack()
