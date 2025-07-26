@@ -1,16 +1,7 @@
 package com.metzger100.calculator.features.currency.ui
 
-import android.media.AudioManager
-import android.os.Build
-import android.os.VibrationEffect
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material3.Icon
@@ -20,11 +11,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.metzger100.calculator.features.calculator.ui.mapSymbol
-import splitties.systemservices.audioManager
-import splitties.systemservices.vibrator
+import com.metzger100.calculator.util.format.FeedbackManager
 
 @Composable
 fun CurrencyConverterKeyboard(
@@ -64,23 +55,6 @@ fun CurrencyConverterKeyboard(
                             modifier = Modifier
                                 .weight(1f),
                             onClick = {
-
-                                // Vibrate & sound effect -----------------------------------------------------------
-
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
-                                } else {
-                                    @Suppress("DEPRECATION")
-                                    vibrator.vibrate(50)
-                                }
-
-                                audioManager.playSoundEffect(
-                                    AudioManager.FX_KEY_CLICK,
-                                    1.0f // Full volume
-                                )
-                                //----------------------------------------------------------------------------------
-
-
                                 when (label) {
                                     "C" -> onClear()
                                     "←" -> onBack()
@@ -104,9 +78,15 @@ fun CurrencyConverterButton(
     val buttonColor = MaterialTheme.colorScheme.surfaceVariant
     val textColor = MaterialTheme.colorScheme.onSurface
 
+    val feedbackManager = FeedbackManager.rememberFeedbackManager()
+    val view = LocalView.current
+
     // Reusable modifier for the clickable surface
     val surfaceModifier = modifier
-        .clickable { onClick() }
+        .clickable {
+            feedbackManager.provideFeedback(view)
+            onClick()
+        }
 
     Surface(
         modifier = surfaceModifier,

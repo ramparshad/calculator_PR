@@ -2,6 +2,7 @@
 agp = "8.10.0"
 composeBomVersion = "2025.05.01"
 coreSplashscreen = "1.0.1"
+datastorePreferences = "1.1.7"
 evalex = "3.5.0"
 evalexBigMath = "1.0.1"
 gson = "2.11.0"
@@ -17,6 +18,7 @@ ktorClientCio = "2.3.0"
 ktorClientContentNegotiation = "2.3.0"
 ktorClientCore = "2.3.0"
 ktorSerializationKotlinxJson = "2.3.0"
+lifecycleRuntimeCompose = "2.9.2"
 lifecycleRuntimeKtx = "2.9.0"
 activityCompose = "1.10.1"
 navigationCompose = "2.9.0"
@@ -30,7 +32,9 @@ activity-compose = { module = "androidx.activity:activity-compose" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBomVersion" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeCompose" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
