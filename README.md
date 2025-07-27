@@ -150,7 +150,7 @@ com.metzger100.calculator
 │
 ├── util
 │   └── format
-|       |-- FeedbackManager.kt    # Non-composable access to preferences
+|       |-- FeedbackManager.kt    # Non-composable access to 
 |       |-- FeedbackPrefs.kt       
 │       ├── NumberFormatModule.kt  # Module for the service class
 │       └── NumberFormatService.kt # Service for readable numbers
