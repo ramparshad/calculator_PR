@@ -11,9 +11,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.metzger100.calculator.features.calculator.ui.mapSymbol
+import com.metzger100.calculator.util.format.FeedbackManager
 
 @Composable
 fun CurrencyConverterKeyboard(
@@ -76,9 +78,15 @@ fun CurrencyConverterButton(
     val buttonColor = MaterialTheme.colorScheme.surfaceVariant
     val textColor = MaterialTheme.colorScheme.onSurface
 
+    val feedbackManager = FeedbackManager.rememberFeedbackManager()
+    val view = LocalView.current
+
     // Reusable modifier for the clickable surface
     val surfaceModifier = modifier
-        .clickable { onClick() }
+        .clickable {
+            feedbackManager.provideFeedback(view)
+            onClick()
+        }
 
     Surface(
         modifier = surfaceModifier,

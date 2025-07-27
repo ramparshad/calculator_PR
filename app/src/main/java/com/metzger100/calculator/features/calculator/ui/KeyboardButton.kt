@@ -1,3 +1,4 @@
+
 package com.metzger100.calculator.features.calculator.ui
 
 import androidx.compose.foundation.clickable
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,6 +23,7 @@ import com.metzger100.calculator.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.metzger100.calculator.util.format.FeedbackManager
 
 /**
  * Utility für Highlight- und Fade-Logik
@@ -56,6 +59,9 @@ fun KeyboardButton(
     val highlighted = KeyboardButtonStyle.isHighlighted(label)
     val faded       = KeyboardButtonStyle.isFaded(label)
 
+    val feedbackManager = FeedbackManager.rememberFeedbackManager()
+    val view = LocalView.current
+
     val buttonColor = when {
         highlighted -> MaterialTheme.colorScheme.primary
         faded       -> Color.Gray
@@ -70,7 +76,10 @@ fun KeyboardButton(
 
     Surface(
         modifier = modifier
-            .clickable { onClick() }
+            .clickable {
+                feedbackManager.provideFeedback(view)
+                onClick()
+            }
             .semantics { contentDescription = contentDesc },
         color = buttonColor,
         tonalElevation = 4.dp,

@@ -27,6 +27,8 @@
     <string name="change_unit_content_description">Change unit %1$s</string>
     <string name="select_currency_content_description">Select currency %1$s</string>
     <string name="change_currency_content_description">Change currency %1$s</string>
+    <string name="TopAppBar_Haptics">Haptics</string>
+    <string name="TopAppBar_Sound">Sound</string>
 
     <!-- Calculator keyboard button contentDescriptions -->
     <string name="key_clear">Clear</string>

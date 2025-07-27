@@ -11,8 +11,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.metzger100.calculator.util.format.FeedbackManager
 
 @Composable
 fun UnitConverterKeyboard(
@@ -73,8 +75,14 @@ fun UnitConverterButton(
     val buttonColor = MaterialTheme.colorScheme.surfaceVariant
     val textColor = MaterialTheme.colorScheme.onSurface
 
+    val feedbackManager = FeedbackManager.rememberFeedbackManager()
+    val view = LocalView.current
+
     Surface(
-        modifier = modifier.clickable { onClick() },
+        modifier = modifier.clickable {
+            feedbackManager.provideFeedback(view)
+            onClick()
+        },
         color = buttonColor,
         tonalElevation = 4.dp,
         shadowElevation = 2.dp,
