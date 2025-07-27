@@ -77,7 +77,7 @@ fun KeyboardButton(
     Surface(
         modifier = modifier
             .clickable {
-                feedbackManager.provideFeedback(view)
+                feedbackManager.provideFeedback(view)              # 
                 onClick()
             }
             .semantics { contentDescription = contentDesc },
