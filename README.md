@@ -150,6 +150,8 @@ com.metzger100.calculator
 │
 ├── util
 │   └── format
+|       |-- FeedbackManager.kt
+|       |-- FeedbackPrefs.kt       
 │       ├── NumberFormatModule.kt  # Module for the service class
 │       └── NumberFormatService.kt # Service for readable numbers
 │
