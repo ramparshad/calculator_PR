@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.metzger100.calculator.util.format.FeedbackManager
+import com.metzger100.calculator.util.FeedbackManager
 
 @Composable
 fun UnitConverterKeyboard(

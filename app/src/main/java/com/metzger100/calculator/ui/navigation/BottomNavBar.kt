@@ -2,12 +2,17 @@ package com.metzger100.calculator.ui.navigation
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.metzger100.calculator.util.FeedbackManager
 
 @Composable
 fun BottomNavBar(navController: NavController) {
+    val feedbackManager = FeedbackManager.rememberFeedbackManager()
+    val view = LocalView.current
+
     val items = listOf(NavItem.Calculator, NavItem.Currency, NavItem.Units)
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
@@ -26,6 +31,7 @@ fun BottomNavBar(navController: NavController) {
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
+                    feedbackManager.provideFeedback(view)
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
                             popUpTo(navController.graph.startDestinationId) { saveState = true }

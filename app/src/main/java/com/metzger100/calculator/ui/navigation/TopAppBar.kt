@@ -11,17 +11,14 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.metzger100.calculator.R
-import com.metzger100.calculator.util.format.FeedbackManager
-import kotlinx.coroutines.launch
+import com.metzger100.calculator.util.FeedbackManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,17 +28,18 @@ fun TopAppBar(
     onClearHistory: () -> Unit,
     onRefreshRates: () -> Unit
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
-
     val feedbackManager = FeedbackManager.rememberFeedbackManager()
-    val coroutineScope = rememberCoroutineScope()
-    val hapticEnabled by feedbackManager.prefs.hapticEnabled.collectAsStateWithLifecycle(initialValue = true)
-    val soundEnabled by feedbackManager.prefs.soundEnabled.collectAsStateWithLifecycle(initialValue = true)
+    val view = LocalView.current
+
+    var menuExpanded by remember { mutableStateOf(false) }
 
     CenterAlignedTopAppBar(
         navigationIcon = {
             if (showBackButton) {
-                IconButton(onClick = onBackClick) {
+                IconButton(onClick = {
+                    feedbackManager.provideFeedback(view)
+                    onBackClick()
+                }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = stringResource(R.string.Back)
@@ -57,16 +55,23 @@ fun TopAppBar(
             )
         },
         actions = {
-            IconButton(onClick = { menuExpanded = true }) {
+            IconButton(onClick = {
+                feedbackManager.provideFeedback(view)
+                menuExpanded = true
+            }) {
                 Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.TopAppBar_Menu))
             }
             DropdownMenu(
                 expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
+                onDismissRequest = {
+                    feedbackManager.provideFeedback(view)
+                    menuExpanded = false
+                }
             ) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.TopAppBar_PurgeHistory)) },
                     onClick = {
+                        feedbackManager.provideFeedback(view)
                         onClearHistory()
                         menuExpanded = false
                     },
@@ -80,6 +85,7 @@ fun TopAppBar(
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.TopAppBar_RefreshRates)) },
                     onClick = {
+                        feedbackManager.provideFeedback(view)
                         onRefreshRates()
                         menuExpanded = false
                     },
@@ -89,24 +95,6 @@ fun TopAppBar(
                             contentDescription = stringResource(R.string.TopAppBar_RefreshRates)
                         )
                     }
-                )
-
-                DropdownMenuItem(
-                    text = { Text(if (hapticEnabled) "Disable Haptics" else "Enable Haptics") },
-                    onClick = {
-                        coroutineScope.launch { feedbackManager.toggleHaptic() }
-                        menuExpanded = false
-                    },
-                    leadingIcon = { Icon(Icons.Default.Vibration, null) }
-                )
-
-                DropdownMenuItem(
-                    text = { Text(if (soundEnabled) "Disable Sound" else "Enable Sound") },
-                    onClick = {
-                        coroutineScope.launch { feedbackManager.toggleSound() }
-                        menuExpanded = false
-                    },
-                    leadingIcon = { Icon(Icons.Default.MusicNote, null) }
                 )
             }
         }

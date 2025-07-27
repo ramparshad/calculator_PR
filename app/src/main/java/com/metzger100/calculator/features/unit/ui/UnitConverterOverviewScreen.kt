@@ -31,12 +31,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.metzger100.calculator.R
+import com.metzger100.calculator.util.FeedbackManager
 
 /**
  * Einzelne Kategorie für die Übersicht
@@ -52,7 +54,8 @@ data class UnitCategory(
 fun UnitConverterOverviewScreen(
     navController: NavController
 ) {
-    // Diese Liste kannst du auch in Constants auslagern oder aus einer Resource generieren
+    val feedbackManager = FeedbackManager.rememberFeedbackManager()
+    val view = LocalView.current
     val categories = listOf(
         UnitCategory("Length", stringResource(R.string.UnitConvCat_Length), Icons.Default.Straighten),
         UnitCategory("Weight", stringResource(R.string.UnitConvCat_Weight), Icons.Default.FitnessCenter),
@@ -82,6 +85,7 @@ fun UnitConverterOverviewScreen(
     ) {
         items(categories) { category ->
             CategoryCard(category) {
+                feedbackManager.provideFeedback(view)
                 navController.navigate("unit/${category.route}")
             }
         }

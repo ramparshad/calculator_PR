@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
@@ -47,6 +48,7 @@ import com.metzger100.calculator.R
 import com.metzger100.calculator.data.local.entity.CalculationEntity
 import com.metzger100.calculator.features.calculator.model.CalculatorMode
 import com.metzger100.calculator.features.calculator.viewmodel.CalculatorViewModel
+import com.metzger100.calculator.util.FeedbackManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -57,6 +59,9 @@ fun CalculatorScreen(
     snackbarHostState: SnackbarHostState,
     coroutineScope: CoroutineScope
 ) {
+    val feedbackManager = FeedbackManager.rememberFeedbackManager()
+    val view = LocalView.current
+
     var keyboardVisible by remember { mutableStateOf(false) }
     val uiState by viewModel::uiState
 
@@ -131,7 +136,10 @@ fun CalculatorScreen(
                             .padding(horizontal = 4.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { keyboardVisible = !keyboardVisible }) {
+                        IconButton(onClick = {
+                            feedbackManager.provideFeedback(view)
+                            keyboardVisible = !keyboardVisible
+                        }) {
                             val desc = if (keyboardVisible)
                                 stringResource(R.string.hide_keyboard)
                             else
@@ -224,6 +232,7 @@ fun CalculatorScreen(
                             val snackDesc = stringResource(R.string.result_copied)
                             IconButton(
                                 onClick = {
+                                    feedbackManager.provideFeedback(view)
                                     coroutineScope.launch {
                                         clipboard.setClipEntry(
                                             ClipEntry(
@@ -249,7 +258,10 @@ fun CalculatorScreen(
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
-                                .clickable { keyboardVisible = true }
+                                .clickable {
+                                    feedbackManager.provideFeedback(view)
+                                    keyboardVisible = true
+                                }
                         )
                     }
                 }
@@ -291,7 +303,6 @@ fun CalculatorScreen(
     }
 }
 
-// RecyclerView Adapter & ViewHolder remain unchanged...
 private class CalculationAdapter(
     private val viewModel: CalculatorViewModel,
     private val textColor: Int,

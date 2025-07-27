@@ -23,7 +23,7 @@ import com.metzger100.calculator.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import com.metzger100.calculator.util.format.FeedbackManager
+import com.metzger100.calculator.util.FeedbackManager
 
 /**
  * Utility für Highlight- und Fade-Logik

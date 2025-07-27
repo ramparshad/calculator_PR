@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -33,6 +34,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.unit.viewmodel.UnitConverterViewModel
 import com.metzger100.calculator.features.unit.ui.UnitConverterConstants.UnitDef
+import com.metzger100.calculator.util.FeedbackManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -44,6 +46,8 @@ fun UnitConverterScreen(
     coroutineScope: CoroutineScope
 ) {
     val uiState by viewModel::uiState
+    val feedbackManager = FeedbackManager.rememberFeedbackManager()
+    val view = LocalView.current
 
     BoxWithConstraints(
         Modifier
@@ -66,7 +70,9 @@ fun UnitConverterScreen(
                 onClick        = { viewModel.onSelectField(1) },
                 formatNumber   = { str, short -> viewModel.formatNumber(str, short) },
                 snackbarHostState = snackbarHostState,
-                coroutineScope = coroutineScope
+                coroutineScope = coroutineScope,
+                feedbackManager = feedbackManager,
+                view = view
             )
             Spacer(Modifier.height(8.dp))
             UnitRow(
@@ -78,7 +84,9 @@ fun UnitConverterScreen(
                 onClick        = { viewModel.onSelectField(2) },
                 formatNumber   = { str, short -> viewModel.formatNumber(str, short) },
                 snackbarHostState = snackbarHostState,
-                coroutineScope = coroutineScope
+                coroutineScope = coroutineScope,
+                feedbackManager = feedbackManager,
+                view = view
             )
         }
 
@@ -122,7 +130,9 @@ fun UnitRow(
     onClick: () -> Unit,
     formatNumber: (String, Boolean) -> String,
     snackbarHostState: SnackbarHostState,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    feedbackManager: FeedbackManager,
+    view: android.view.View
 ) {
     var show by remember { mutableStateOf(false) }
     val borderM = if (isSel) Modifier.border(
@@ -137,7 +147,10 @@ fun UnitRow(
         Modifier
             .fillMaxWidth()
             .then(borderM)
-            .clickable { onClick() },
+            .clickable {
+                feedbackManager.provideFeedback(view)
+                onClick()
+            },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
@@ -153,7 +166,10 @@ fun UnitRow(
                 fontSize = 18.sp,
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
-                    .clickable { show = true }
+                    .clickable {
+                        feedbackManager.provideFeedback(view)
+                        show = true
+                    }
                     .semantics {
                         contentDescription = changeUnitDesc
                     }
@@ -181,6 +197,7 @@ fun UnitRow(
                 IconButton(
                     onClick = {
                         coroutineScope.launch {
+                            feedbackManager.provideFeedback(view)
                             clipboard.setClipEntry(
                                 ClipEntry(
                                     ClipData.newPlainText("Currency Value", value)
@@ -209,16 +226,19 @@ fun UnitRow(
                 onUnitSelected(it)
                 show = false
             },
-            onDismissRequest = { show = false }
+            onDismissRequest = { show = false },
+            feedbackManager = feedbackManager
         )
     }
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun UnitSelectorDialogRV(
     units: List<UnitDef>,
     onUnitSelected: (UnitDef) -> Unit,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
+    feedbackManager: FeedbackManager
 ) {
     val textColor = MaterialTheme.colorScheme.onSurface.toArgb()
 
@@ -261,7 +281,8 @@ fun UnitSelectorDialogRV(
                                         R.string.select_unit_content_description, unitName
                                     )
 
-                                    holder.itemView.setOnClickListener {
+                                    holder.itemView.setOnClickListener { v ->
+                                        feedbackManager.provideFeedback(v, sound = false)
                                         onUnitSelected(unit)
                                     }
                                 }

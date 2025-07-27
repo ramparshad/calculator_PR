@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -37,6 +38,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.metzger100.calculator.R
 import com.metzger100.calculator.features.currency.viewmodel.CurrencyViewModel
 import com.metzger100.calculator.features.currency.ui.CurrencyConverterConstants.MajorCurrencyCodes
+import com.metzger100.calculator.util.FeedbackManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -56,6 +58,8 @@ fun CurrencyConverterScreen(
 ) {
     // gesamter UI‑State
     val uiState by viewModel::uiState
+    val feedbackManager = FeedbackManager.rememberFeedbackManager()
+    val view = LocalView.current
 
     // StateFlow → collectAsState()
     val currenciesWithTitles by viewModel.currenciesWithTitles.collectAsState()
@@ -129,7 +133,9 @@ fun CurrencyConverterScreen(
                 onCurrencySelected = { viewModel.onCurrencyChanged1(it) },
                 onClick     = { viewModel.onSelectField(1) },
                 snackbarHostState = snackbarHostState,
-                coroutineScope    = coroutineScope
+                coroutineScope    = coroutineScope,
+                feedbackManager   = feedbackManager,
+                view              = view
             )
             Spacer(Modifier.height(8.dp))
             CurrencyRow(
@@ -140,7 +146,9 @@ fun CurrencyConverterScreen(
                 onCurrencySelected = { viewModel.onCurrencyChanged2(it) },
                 onClick     = { viewModel.onSelectField(2) },
                 snackbarHostState = snackbarHostState,
-                coroutineScope    = coroutineScope
+                coroutineScope    = coroutineScope,
+                feedbackManager   = feedbackManager,
+                view              = view
             )
         }
 
@@ -237,7 +245,9 @@ private fun CurrencyRow(
     onCurrencySelected: (String) -> Unit,
     onClick: () -> Unit,
     snackbarHostState: SnackbarHostState,
-    coroutineScope: CoroutineScope
+    coroutineScope: CoroutineScope,
+    feedbackManager: FeedbackManager,
+    view: View
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val borderModifier = if (isSelected) {
@@ -250,7 +260,10 @@ private fun CurrencyRow(
         modifier = Modifier
             .fillMaxWidth()
             .then(borderModifier)
-            .clickable { onClick() },
+            .clickable {
+                feedbackManager.provideFeedback(view)
+                onClick()
+            },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Row(
@@ -264,7 +277,10 @@ private fun CurrencyRow(
                 text = currency,
                 fontSize = 18.sp,
                 modifier = Modifier
-                    .clickable { showDialog = true }
+                    .clickable {
+                        feedbackManager.provideFeedback(view)
+                        showDialog = true
+                    }
                     .semantics {
                         contentDescription = changeCurrencyDesc
                     }
@@ -282,6 +298,7 @@ private fun CurrencyRow(
                 val snackDesc = stringResource(R.string.value_copied)
                 IconButton(
                     onClick = {
+                        feedbackManager.provideFeedback(view)
                         coroutineScope.launch {
                             clipboard.setClipEntry(
                                 ClipEntry(
@@ -311,16 +328,19 @@ private fun CurrencyRow(
                 onCurrencySelected(it)
                 showDialog = false
             },
-            onDismissRequest = { showDialog = false }
+            onDismissRequest = { showDialog = false },
+            feedbackManager = feedbackManager
         )
     }
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun CurrencySelectorDialogRV(
     currencies: List<Pair<String, String>>,
     onCurrencySelected: (String) -> Unit,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
+    feedbackManager: FeedbackManager
 ) {
     val textColor = MaterialTheme.colorScheme.onSurface
     val dialogHeight = remember { mutableStateOf(0.dp) }
@@ -375,7 +395,10 @@ fun CurrencySelectorDialogRV(
                                         R.string.select_currency_content_description, title
                                     )
 
-                                    holder.itemView.setOnClickListener { onCurrencySelected(code) }
+                                    holder.itemView.setOnClickListener { v ->
+                                        feedbackManager.provideFeedback(v, sound = false)
+                                        onCurrencySelected(code)
+                                    }
                                 }
                             }
                         }
